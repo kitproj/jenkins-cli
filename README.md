@@ -176,35 +176,6 @@ jenkins get-build-log my-application-build 42
 - Report issues: https://github.com/kitproj/jenkins-cli/issues
 - Check existing issues for solutions and workarounds
 
-## Development
-
-### Running Tests
-
-```bash
-go test ./...
-```
-
-### Building
-
-```bash
-go build -o jenkins .
-```
-
-### Cross-compilation
-
-```bash
-# Linux
-GOOS=linux GOARCH=amd64 go build -o jenkins-linux-amd64 .
-GOOS=linux GOARCH=arm64 go build -o jenkins-linux-arm64 .
-
-# macOS
-GOOS=darwin GOARCH=amd64 go build -o jenkins-darwin-amd64 .
-GOOS=darwin GOARCH=arm64 go build -o jenkins-darwin-arm64 .
-
-# Windows
-GOOS=windows GOARCH=amd64 go build -o jenkins-windows-amd64.exe .
-```
-
 ## License
 
 See [LICENSE](LICENSE) file for details.
