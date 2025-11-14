@@ -2,73 +2,24 @@ package main
 
 import (
 	"context"
-	"crypto/tls"
-	"encoding/json"
 	"flag"
 	"fmt"
-	"io"
-	"net/http"
-	"net/url"
 	"os"
 	"os/signal"
 	"strings"
 	"syscall"
-	"time"
 
+	"github.com/bndr/gojenkins"
 	"github.com/kitproj/jenkins-cli/internal/config"
 	"golang.org/x/term"
 )
 
 var (
-	host   string
-	token  string
-	user   string
-	client *http.Client
+	host    string
+	token   string
+	user    string
+	jenkins *gojenkins.Jenkins
 )
-
-// Job represents a Jenkins job
-type Job struct {
-	Name  string `json:"name"`
-	URL   string `json:"url"`
-	Color string `json:"color"`
-}
-
-// JobsResponse represents the response from Jenkins jobs API
-type JobsResponse struct {
-	Jobs []Job `json:"jobs"`
-}
-
-// Build represents a Jenkins build
-type Build struct {
-	Number    int    `json:"number"`
-	URL       string `json:"url"`
-	Result    string `json:"result"`
-	Timestamp int64  `json:"timestamp"`
-	Duration  int64  `json:"duration"`
-	Building  bool   `json:"building"`
-}
-
-// JobDetail represents detailed job information
-type JobDetail struct {
-	Name            string  `json:"name"`
-	URL             string  `json:"url"`
-	Description     string  `json:"description"`
-	Color           string  `json:"color"`
-	LastBuild       *Build  `json:"lastBuild"`
-	LastSuccessBuild *Build `json:"lastSuccessfulBuild"`
-	LastFailedBuild  *Build `json:"lastFailedBuild"`
-}
-
-// BuildDetail represents detailed build information
-type BuildDetail struct {
-	Number      int    `json:"number"`
-	URL         string `json:"url"`
-	Result      string `json:"result"`
-	Timestamp   int64  `json:"timestamp"`
-	Duration    int64  `json:"duration"`
-	Building    bool   `json:"building"`
-	Description string `json:"description"`
-}
 
 func main() {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
@@ -207,14 +158,11 @@ func executeCommand(ctx context.Context, fn func(context.Context) error) error {
 		return fmt.Errorf("token is required")
 	}
 
-	// Create HTTP client with timeout and TLS configuration
-	client = &http.Client{
-		Timeout: 30 * time.Second,
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: false,
-			},
-		},
+	// Create Jenkins client
+	var err error
+	jenkins, err = gojenkins.CreateJenkins(nil, "https://"+host, user, token).Init(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to create Jenkins client: %w", err)
 	}
 
 	return fn(ctx)
@@ -269,52 +217,22 @@ func configure(host, username string) error {
 	return nil
 }
 
-// makeRequest makes an authenticated HTTP request to Jenkins
-func makeRequest(ctx context.Context, method, path string, body io.Reader) (*http.Response, error) {
-	// Host should not have protocol prefix - always use https://
-	jenkinsURL := "https://" + host
-
-	reqURL := fmt.Sprintf("%s%s", jenkinsURL, path)
-	req, err := http.NewRequestWithContext(ctx, method, reqURL, body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
-	}
-
-	// Add authentication
-	if user != "" && token != "" {
-		req.SetBasicAuth(user, token)
-	}
-
-	return client.Do(req)
-}
-
 // listJobs lists all Jenkins jobs
 func listJobs(ctx context.Context) error {
-	resp, err := makeRequest(ctx, "GET", "/api/json?tree=jobs[name,url,color]", nil)
+	jobs, err := jenkins.GetAllJobs(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to list jobs: %w", err)
 	}
-	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("failed to list jobs: %s - %s", resp.Status, string(body))
-	}
-
-	var jobsResp JobsResponse
-	if err := json.NewDecoder(resp.Body).Decode(&jobsResp); err != nil {
-		return fmt.Errorf("failed to decode response: %w", err)
-	}
-
-	if len(jobsResp.Jobs) == 0 {
+	if len(jobs) == 0 {
 		fmt.Println("No jobs found")
 		return nil
 	}
 
-	fmt.Printf("Found %d job(s):\n\n", len(jobsResp.Jobs))
-	for _, job := range jobsResp.Jobs {
-		status := getStatusFromColor(job.Color)
-		fmt.Printf("%-40s %-15s %s\n", job.Name, status, job.URL)
+	fmt.Printf("Found %d job(s):\n\n", len(jobs))
+	for _, job := range jobs {
+		status := getStatusFromColor(job.Raw.Color)
+		fmt.Printf("%-40s %-15s %s\n", job.GetName(), status, job.Raw.URL)
 	}
 
 	return nil
@@ -322,39 +240,31 @@ func listJobs(ctx context.Context) error {
 
 // getJob gets details of a specific job
 func getJob(ctx context.Context, jobName string) error {
-	encodedJobName := url.PathEscape(jobName)
-	path := fmt.Sprintf("/job/%s/api/json", encodedJobName)
-
-	resp, err := makeRequest(ctx, "GET", path, nil)
+	job, err := jenkins.GetJob(ctx, jobName)
 	if err != nil {
 		return fmt.Errorf("failed to get job: %w", err)
 	}
-	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("failed to get job: %s - %s", resp.Status, string(body))
+	printField("Job Name", job.GetName())
+	printField("URL", job.Raw.URL)
+	printField("Status", getStatusFromColor(job.Raw.Color))
+	if job.GetDescription() != "" {
+		printField("Description", job.GetDescription())
 	}
-
-	var job JobDetail
-	if err := json.NewDecoder(resp.Body).Decode(&job); err != nil {
-		return fmt.Errorf("failed to decode response: %w", err)
+	
+	lastBuild, err := job.GetLastBuild(ctx)
+	if err == nil && lastBuild != nil {
+		printField("Last Build", fmt.Sprintf("#%d - %s", lastBuild.GetBuildNumber(), lastBuild.GetResult()))
 	}
-
-	printField("Job Name", job.Name)
-	printField("URL", job.URL)
-	printField("Status", getStatusFromColor(job.Color))
-	if job.Description != "" {
-		printField("Description", job.Description)
+	
+	lastSuccess, err := job.GetLastSuccessfulBuild(ctx)
+	if err == nil && lastSuccess != nil {
+		printField("Last Success", fmt.Sprintf("#%d", lastSuccess.GetBuildNumber()))
 	}
-	if job.LastBuild != nil {
-		printField("Last Build", fmt.Sprintf("#%d - %s", job.LastBuild.Number, job.LastBuild.Result))
-	}
-	if job.LastSuccessBuild != nil {
-		printField("Last Success", fmt.Sprintf("#%d", job.LastSuccessBuild.Number))
-	}
-	if job.LastFailedBuild != nil {
-		printField("Last Failed", fmt.Sprintf("#%d", job.LastFailedBuild.Number))
+	
+	lastFailed, err := job.GetLastFailedBuild(ctx)
+	if err == nil && lastFailed != nil {
+		printField("Last Failed", fmt.Sprintf("#%d", lastFailed.GetBuildNumber()))
 	}
 
 	return nil
@@ -362,18 +272,14 @@ func getJob(ctx context.Context, jobName string) error {
 
 // buildJob triggers a build for a job
 func buildJob(ctx context.Context, jobName string) error {
-	encodedJobName := url.PathEscape(jobName)
-	path := fmt.Sprintf("/job/%s/build", encodedJobName)
+	job, err := jenkins.GetJob(ctx, jobName)
+	if err != nil {
+		return fmt.Errorf("failed to get job: %w", err)
+	}
 
-	resp, err := makeRequest(ctx, "POST", path, nil)
+	_, err = job.InvokeSimple(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("failed to trigger build: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("failed to trigger build: %s - %s", resp.Status, string(body))
 	}
 
 	fmt.Printf("Successfully triggered build for job: %s\n", jobName)
@@ -382,113 +288,80 @@ func buildJob(ctx context.Context, jobName string) error {
 
 // getBuild gets details of a specific build
 func getBuild(ctx context.Context, jobName, buildNumber string) error {
-	encodedJobName := url.PathEscape(jobName)
-	path := fmt.Sprintf("/job/%s/%s/api/json", encodedJobName, buildNumber)
+	job, err := jenkins.GetJob(ctx, jobName)
+	if err != nil {
+		return fmt.Errorf("failed to get job: %w", err)
+	}
 
-	resp, err := makeRequest(ctx, "GET", path, nil)
+	build, err := job.GetBuild(ctx, parseBuildNumber(buildNumber))
 	if err != nil {
 		return fmt.Errorf("failed to get build: %w", err)
 	}
-	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("failed to get build: %s - %s", resp.Status, string(body))
-	}
-
-	var build BuildDetail
-	if err := json.NewDecoder(resp.Body).Decode(&build); err != nil {
-		return fmt.Errorf("failed to decode response: %w", err)
-	}
-
-	printField("Build Number", build.Number)
-	printField("URL", build.URL)
-	status := build.Result
-	if build.Building {
-		status = "BUILDING"
-	}
-	printField("Status", status)
-	if build.Description != "" {
-		printField("Description", build.Description)
-	}
-	if build.Timestamp > 0 {
-		buildTime := time.Unix(build.Timestamp/1000, 0)
-		printField("Started", buildTime.Format(time.RFC1123))
-	}
-	if build.Duration > 0 {
-		duration := time.Duration(build.Duration) * time.Millisecond
-		printField("Duration", duration.String())
-	}
-
+	printBuildDetails(build)
 	return nil
 }
 
 // getBuildLog gets the console output of a build
 func getBuildLog(ctx context.Context, jobName, buildNumber string) error {
-	encodedJobName := url.PathEscape(jobName)
-	path := fmt.Sprintf("/job/%s/%s/consoleText", encodedJobName, buildNumber)
-
-	resp, err := makeRequest(ctx, "GET", path, nil)
+	job, err := jenkins.GetJob(ctx, jobName)
 	if err != nil {
-		return fmt.Errorf("failed to get build log: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("failed to get build log: %s - %s", resp.Status, string(body))
+		return fmt.Errorf("failed to get job: %w", err)
 	}
 
-	// Stream the log output to stdout
-	_, err = io.Copy(os.Stdout, resp.Body)
+	build, err := job.GetBuild(ctx, parseBuildNumber(buildNumber))
 	if err != nil {
-		return fmt.Errorf("failed to read build log: %w", err)
+		return fmt.Errorf("failed to get build: %w", err)
 	}
 
+	log := build.GetConsoleOutput(ctx)
+	fmt.Print(log)
 	return nil
 }
 
 // getLastBuild gets details of the last build of a job
 func getLastBuild(ctx context.Context, jobName string) error {
-	encodedJobName := url.PathEscape(jobName)
-	path := fmt.Sprintf("/job/%s/lastBuild/api/json", encodedJobName)
+	job, err := jenkins.GetJob(ctx, jobName)
+	if err != nil {
+		return fmt.Errorf("failed to get job: %w", err)
+	}
 
-	resp, err := makeRequest(ctx, "GET", path, nil)
+	build, err := job.GetLastBuild(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to get last build: %w", err)
 	}
-	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("failed to get last build: %s - %s", resp.Status, string(body))
-	}
+	printBuildDetails(build)
+	return nil
+}
 
-	var build BuildDetail
-	if err := json.NewDecoder(resp.Body).Decode(&build); err != nil {
-		return fmt.Errorf("failed to decode response: %w", err)
-	}
+// Helper functions
 
-	printField("Build Number", build.Number)
-	printField("URL", build.URL)
-	status := build.Result
-	if build.Building {
+func parseBuildNumber(buildNumber string) int64 {
+	var num int64
+	fmt.Sscanf(buildNumber, "%d", &num)
+	return num
+}
+
+func printBuildDetails(build *gojenkins.Build) {
+	printField("Build Number", build.GetBuildNumber())
+	printField("URL", build.GetUrl())
+	status := build.GetResult()
+	if build.IsRunning(nil) {
 		status = "BUILDING"
 	}
 	printField("Status", status)
-	if build.Description != "" {
-		printField("Description", build.Description)
+	if build.Raw.Description != "" {
+		printField("Description", build.Raw.Description)
 	}
-	if build.Timestamp > 0 {
-		buildTime := time.Unix(build.Timestamp/1000, 0)
-		printField("Started", buildTime.Format(time.RFC1123))
+	buildTime := build.GetTimestamp()
+	if !buildTime.IsZero() {
+		printField("Started", buildTime.Format("Mon, 02 Jan 2006 15:04:05 MST"))
 	}
-	if build.Duration > 0 {
-		duration := time.Duration(build.Duration) * time.Millisecond
-		printField("Duration", duration.String())
+	duration := build.GetDuration()
+	if duration > 0 {
+		printField("Duration", fmt.Sprintf("%.0fs", duration/1000))
 	}
-
-	return nil
 }
 
 // printField prints a field with proper formatting
