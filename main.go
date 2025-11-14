@@ -404,6 +404,8 @@ func getStatusFromColor(color string) string {
 		return "NOT_BUILT"
 	case strings.HasPrefix(color, "disabled"):
 		return "DISABLED"
+	case strings.HasPrefix(color, "disabled"):
+		return "DISABLED"
 	default:
 		return strings.ToUpper(color)
 	}
