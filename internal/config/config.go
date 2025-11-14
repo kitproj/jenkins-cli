@@ -16,7 +16,8 @@ const (
 
 // config represents the jenkins-cli configuration
 type config struct {
-	Host string `json:"host"`
+	Host     string `json:"host"`
+	Username string `json:"username,omitempty"`
 }
 
 // getConfigPath returns the path to the config file
@@ -30,8 +31,8 @@ func getConfigPath() (string, error) {
 	return configPath, nil
 }
 
-// SaveConfig saves the host to the config file
-func SaveConfig(host string) error {
+// SaveConfig saves the host and username to the config file
+func SaveConfig(host, username string) error {
 	configPath, err := getConfigPath()
 	if err != nil {
 		return err
@@ -43,7 +44,7 @@ func SaveConfig(host string) error {
 		return fmt.Errorf("failed to create config directory: %w", err)
 	}
 
-	cfg := config{Host: host}
+	cfg := config{Host: host, Username: username}
 	data, err := json.MarshalIndent(cfg, "", "  ")
 	if err != nil {
 		return fmt.Errorf("failed to marshal config: %w", err)
@@ -56,24 +57,24 @@ func SaveConfig(host string) error {
 	return nil
 }
 
-// LoadConfig loads the host from the config file
-func LoadConfig() (string, error) {
+// LoadConfig loads the host and username from the config file
+func LoadConfig() (string, string, error) {
 	configPath, err := getConfigPath()
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	data, err := os.ReadFile(configPath)
 	if err != nil {
-		return "", fmt.Errorf("failed to read config file: %w", err)
+		return "", "", fmt.Errorf("failed to read config file: %w", err)
 	}
 
 	var cfg config
 	if err := json.Unmarshal(data, &cfg); err != nil {
-		return "", fmt.Errorf("failed to parse config file: %w", err)
+		return "", "", fmt.Errorf("failed to parse config file: %w", err)
 	}
 
-	return cfg.Host, nil
+	return cfg.Host, cfg.Username, nil
 }
 
 // SaveToken saves the token to the keyring

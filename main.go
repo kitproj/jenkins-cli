@@ -166,13 +166,17 @@ func run(ctx context.Context, args []string) error {
 }
 
 func executeCommand(ctx context.Context, fn func(context.Context) error) error {
-	// Load host from config file, or fall back to env var
+	// Load host and username from config file, or fall back to env var
 	if host == "" {
 		var err error
-		host, err = config.LoadConfig()
+		var configUsername string
+		host, configUsername, err = config.LoadConfig()
 		if err != nil {
 			// Fall back to environment variable
 			host = os.Getenv("JENKINS_HOST")
+		} else if user == "" && configUsername != "" {
+			// Use username from config if not already set
+			user = configUsername
 		}
 	}
 
@@ -250,8 +254,8 @@ func configure(host, username string) error {
 		return fmt.Errorf("token cannot be empty")
 	}
 
-	// Save host to config file
-	if err := config.SaveConfig(host); err != nil {
+	// Save host and username to config file
+	if err := config.SaveConfig(host, username); err != nil {
 		return err
 	}
 
