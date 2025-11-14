@@ -63,6 +63,8 @@ The `jenkins` CLI can be configured in two ways:
    # Then enter your API token when prompted
    ```
    This stores the host in `~/.config/jenkins-cli/config.json` and the token securely in your system's keyring.
+   
+   **Note:** Provide only the hostname without `http://` or `https://` prefix. The CLI will automatically use HTTPS.
 
 2. **Using environment variables**:
    ```bash

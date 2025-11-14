@@ -222,6 +222,11 @@ func configure(host, username string) error {
 		return fmt.Errorf("host is required")
 	}
 
+	// Reject http:// or https:// prefix - host should be hostname only
+	if strings.HasPrefix(host, "http://") || strings.HasPrefix(host, "https://") {
+		return fmt.Errorf("host should not include http:// or https:// prefix, provide hostname only (e.g., jenkins.example.com)")
+	}
+
 	if username == "" {
 		username = "admin"
 	}
@@ -262,11 +267,8 @@ func configure(host, username string) error {
 
 // makeRequest makes an authenticated HTTP request to Jenkins
 func makeRequest(ctx context.Context, method, path string, body io.Reader) (*http.Response, error) {
-	// Ensure host has proper protocol
-	jenkinsURL := host
-	if !strings.HasPrefix(jenkinsURL, "http://") && !strings.HasPrefix(jenkinsURL, "https://") {
-		jenkinsURL = "https://" + jenkinsURL
-	}
+	// Host should not have protocol prefix - always use https://
+	jenkinsURL := "https://" + host
 
 	reqURL := fmt.Sprintf("%s%s", jenkinsURL, path)
 	req, err := http.NewRequestWithContext(ctx, method, reqURL, body)
