@@ -1,6 +1,8 @@
-# Jenkins CLI
+# Jenkins CLI & MCP Server
 
-A Golang-based CLI for interacting with Jenkins. Inspired by the [jira-cli](https://github.com/kitproj/jira-cli), it provides a simple and efficient way for humans and automation tools to interact with Jenkins from the command line.
+A Golang-based CLI and MCP server for interacting with Jenkins. Inspired by the [jira-cli](https://github.com/kitproj/jira-cli), it provides a simple and efficient way for humans and automation tools to interact with Jenkins from the command line.
+
+Being both a CLI and an MCP server means you get the best of both worlds. Humans can use the CLI commands directly, while AI agents can use the MCP server to perform Jenkins operations programmatically.
 
 Like `jq`, it is designed to be a single, lightweight binary without the overhead of installing additional runtimes, and without the need to store your Jenkins API token in plain text files (it uses the system keyring).
 
@@ -10,6 +12,7 @@ Like `jq`, it is designed to be a single, lightweight binary without the overhea
 - 📦 **Single binary** - No dependencies, just download and run
 - 🚀 **Simple commands** - Intuitive command structure
 - 🔧 **Jenkins operations** - List jobs, trigger builds, get build status, view logs
+- 🤖 **MCP Server** - Model Context Protocol server for AI agent integration
 
 ## Installation
 
@@ -85,6 +88,7 @@ Usage:
   jenkins get-build <job-name> <build-number> - Get details of a specific build
   jenkins get-build-log <job-name> <build-number> - Get the console output of a build
   jenkins get-last-build <job-name> - Get details of the last build
+  jenkins mcp-server - Start MCP server (Model Context Protocol)
 ```
 
 ### Examples
@@ -146,6 +150,48 @@ jenkins get-last-build my-application-build
 ```bash
 jenkins get-build-log my-application-build 42
 # Streams the console output of build #42
+```
+
+## MCP Server Mode
+
+The jenkins-cli can also run as an MCP (Model Context Protocol) server, allowing AI agents to interact with Jenkins through a standardized protocol.
+
+### Starting the MCP Server
+
+```bash
+jenkins mcp-server
+```
+
+The MCP server communicates over standard input/output (stdio) and provides the following tools for AI agents:
+
+- **list_jobs** - List all Jenkins jobs with their status and URL
+- **get_job** - Get details of a specific Jenkins job including status, description, and build history
+- **build_job** - Trigger a build for a Jenkins job
+- **get_build** - Get details of a specific build including status, duration, and timestamp
+- **get_build_log** - Get the console output of a specific build
+- **get_last_build** - Get details of the last build of a Jenkins job
+
+### MCP Server Configuration
+
+The MCP server uses the same configuration as the CLI:
+- Configuration file: `~/.config/jenkins-cli/config.json` (host and username)
+- Credentials stored securely in system keyring
+- Environment variables `JENKINS_HOST` and `JENKINS_TOKEN` are also supported
+
+### Using with AI Agents
+
+Configure your AI agent or MCP client to use the jenkins-cli MCP server. The server will handle all Jenkins operations through the MCP protocol, providing a secure and standardized way for AI agents to interact with Jenkins.
+
+Example MCP client configuration:
+```json
+{
+  "mcpServers": {
+    "jenkins": {
+      "command": "jenkins",
+      "args": ["mcp-server"]
+    }
+  }
+}
 ```
 
 ## Troubleshooting

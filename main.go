@@ -37,6 +37,7 @@ func main() {
 		fmt.Fprintln(w, "  jenkins get-build <job-name> <build-number> - Get details of a specific build")
 		fmt.Fprintln(w, "  jenkins get-build-log <job-name> <build-number> - Get the console output of a build")
 		fmt.Fprintln(w, "  jenkins get-last-build <job-name> - Get details of the last build")
+		fmt.Fprintln(w, "  jenkins mcp-server - Start MCP server (Model Context Protocol)")
 		fmt.Fprintln(w)
 		fmt.Fprintln(w, "Options:")
 		flag.PrintDefaults()
@@ -112,6 +113,8 @@ func run(ctx context.Context, args []string) error {
 		return executeCommand(ctx, func(ctx context.Context) error {
 			return getLastBuild(ctx, jobName)
 		})
+	case "mcp-server":
+		return runMCPServer(ctx)
 	default:
 		return fmt.Errorf("unknown sub-command: %s", command)
 	}
