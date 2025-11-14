@@ -8,6 +8,7 @@ import (
 	"os/signal"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/bndr/gojenkins"
 	"github.com/kitproj/jenkins-cli/internal/config"
@@ -217,8 +218,7 @@ func configure(host, username string) error {
 		return err
 	}
 
-	fmt.Fprintf(os.Stderr, "Configuration saved successfully for host: %s\n", host)
-	fmt.Fprintf(os.Stderr, "Username will default to '%s' (override with JENKINS_USER env var)\n", username)
+	fmt.Fprintf(os.Stderr, "Configuration saved successfully for host: %s (username: %s, override with JENKINS_USER env var)\n", host, username)
 	return nil
 }
 
@@ -361,7 +361,7 @@ func printBuildDetails(build *gojenkins.Build) {
 	}
 	buildTime := build.GetTimestamp()
 	if !buildTime.IsZero() {
-		printField("Started", buildTime.Format("Mon, 02 Jan 2006 15:04:05 MST"))
+		printField("Started", timeAgo(buildTime))
 	}
 	duration := build.GetDuration()
 	if duration > 0 {
@@ -401,5 +401,29 @@ func getStatusFromColor(color string) string {
 		return "NOT_BUILT"
 	default:
 		return strings.ToUpper(color)
+	}
+}
+
+// timeAgo formats a time.Time as a human-readable "ago" string
+func timeAgo(t time.Time) string {
+	if t.IsZero() {
+		return ""
+	}
+	
+	duration := time.Since(t)
+	
+	switch {
+	case duration < time.Minute:
+		return fmt.Sprintf("%.0f seconds ago", duration.Seconds())
+	case duration < time.Hour:
+		return fmt.Sprintf("%.0f minutes ago", duration.Minutes())
+	case duration < 24*time.Hour:
+		return fmt.Sprintf("%.0f hours ago", duration.Hours())
+	case duration < 30*24*time.Hour:
+		return fmt.Sprintf("%.0f days ago", duration.Hours()/24)
+	case duration < 365*24*time.Hour:
+		return fmt.Sprintf("%.0f months ago", duration.Hours()/(24*30))
+	default:
+		return fmt.Sprintf("%.0f years ago", duration.Hours()/(24*365))
 	}
 }
