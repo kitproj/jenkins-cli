@@ -161,12 +161,7 @@ func executeCommand(ctx context.Context, fn func(context.Context) error) error {
 
 	// Create Jenkins client
 	var err error
-	// Add https:// if no protocol is specified
-	jenkinsURL := host
-	if !strings.HasPrefix(host, "http://") && !strings.HasPrefix(host, "https://") {
-		jenkinsURL = "https://" + host
-	}
-	jenkins, err = gojenkins.CreateJenkins(nil, jenkinsURL, user, token).Init(ctx)
+	jenkins, err = gojenkins.CreateJenkins(nil, host, user, token).Init(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to create Jenkins client: %w", err)
 	}
@@ -185,12 +180,7 @@ func configure(host, username string) error {
 	}
 
 	fmt.Fprintf(os.Stderr, "To create an API token in Jenkins:\n")
-	// Build the URL properly based on whether protocol is included
-	configURL := host
-	if !strings.HasPrefix(host, "http://") && !strings.HasPrefix(host, "https://") {
-		configURL = "https://" + host
-	}
-	fmt.Fprintf(os.Stderr, "1. Go to: %s/user/%s/configure\n", configURL, username)
+	fmt.Fprintf(os.Stderr, "1. Go to: %s/user/%s/configure\n", host, username)
 	fmt.Fprintf(os.Stderr, "2. Click 'Add new Token' under API Token section\n")
 	fmt.Fprintf(os.Stderr, "3. Copy the generated token\n")
 	fmt.Fprintf(os.Stderr, "\nThe token will be stored securely in your system's keyring.\n")
