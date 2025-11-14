@@ -22,6 +22,7 @@ func TestGetStatusFromColor(t *testing.T) {
 		{"aborted_anime", "ABORTED"},
 		{"notbuilt", "NOT_BUILT"},
 		{"disabled", "DISABLED"},
+		{"disabled_anime", "DISABLED"},
 	}
 
 	for _, tt := range tests {

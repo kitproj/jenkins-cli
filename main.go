@@ -288,12 +288,17 @@ func getBuild(ctx context.Context, jobName, buildNumber string) error {
 		return fmt.Errorf("failed to get job: %w", err)
 	}
 
-	build, err := job.GetBuild(ctx, parseBuildNumber(buildNumber))
+	buildNum, err := parseBuildNumber(buildNumber)
+	if err != nil {
+		return err
+	}
+
+	build, err := job.GetBuild(ctx, buildNum)
 	if err != nil {
 		return fmt.Errorf("failed to get build: %w", err)
 	}
 
-	printBuildDetails(build)
+	printBuildDetails(ctx, build)
 	return nil
 }
 
@@ -304,7 +309,12 @@ func getBuildLog(ctx context.Context, jobName, buildNumber string) error {
 		return fmt.Errorf("failed to get job: %w", err)
 	}
 
-	build, err := job.GetBuild(ctx, parseBuildNumber(buildNumber))
+	buildNum, err := parseBuildNumber(buildNumber)
+	if err != nil {
+		return err
+	}
+
+	build, err := job.GetBuild(ctx, buildNum)
 	if err != nil {
 		return fmt.Errorf("failed to get build: %w", err)
 	}
@@ -326,23 +336,26 @@ func getLastBuild(ctx context.Context, jobName string) error {
 		return fmt.Errorf("failed to get last build: %w", err)
 	}
 
-	printBuildDetails(build)
+	printBuildDetails(ctx, build)
 	return nil
 }
 
 // Helper functions
 
-func parseBuildNumber(buildNumber string) int64 {
+func parseBuildNumber(buildNumber string) (int64, error) {
 	var num int64
-	fmt.Sscanf(buildNumber, "%d", &num)
-	return num
+	_, err := fmt.Sscanf(buildNumber, "%d", &num)
+	if err != nil || num <= 0 {
+		return 0, fmt.Errorf("invalid build number: %s", buildNumber)
+	}
+	return num, nil
 }
 
-func printBuildDetails(build *gojenkins.Build) {
+func printBuildDetails(ctx context.Context, build *gojenkins.Build) {
 	printField("Build Number", build.GetBuildNumber())
 	printField("URL", build.GetUrl())
 	status := build.GetResult()
-	if build.IsRunning(nil) {
+	if build.IsRunning(ctx) {
 		status = "BUILDING"
 	}
 	printField("Status", status)
@@ -389,6 +402,8 @@ func getStatusFromColor(color string) string {
 		return "ABORTED"
 	case strings.HasPrefix(color, "notbuilt"):
 		return "NOT_BUILT"
+	case strings.HasPrefix(color, "disabled"):
+		return "DISABLED"
 	default:
 		return strings.ToUpper(color)
 	}
