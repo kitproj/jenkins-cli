@@ -59,16 +59,16 @@ The `jenkins` CLI can be configured in two ways:
 
 1. **Using the configure command (recommended, secure)**:
    ```bash
-   jenkins configure your-jenkins-host.com your-username
+   jenkins configure https://your-jenkins-host.com your-username
    # Then enter your API token when prompted
    ```
    This stores the host and username in `~/.config/jenkins-cli/config.json` and the token securely in your system's keyring.
    
-   **Note:** You can provide just the hostname (defaults to HTTPS), or include the protocol for HTTP instances: `http://localhost:8080`
+   **Note:** Provide the full URL including the protocol (e.g., `https://jenkins.example.com` or `http://localhost:8080`)
 
 2. **Using environment variables**:
    ```bash
-   export JENKINS_HOST=your-jenkins-host.com
+   export JENKINS_HOST=https://your-jenkins-host.com
    export JENKINS_USER=your-username
    export JENKINS_TOKEN=your-api-token
    ```
@@ -91,7 +91,7 @@ Usage:
 
 **Configure Jenkins CLI:**
 ```bash
-jenkins configure jenkins.example.com myusername
+jenkins configure https://jenkins.example.com myusername
 # Enter your API token when prompted
 ```
 
@@ -132,8 +132,8 @@ jenkins get-build my-application-build 42
 # Build Number:        42
 # URL:                 https://jenkins.example.com/job/my-application-build/42/
 # Status:              SUCCESS
-# Started:             Mon, 14 Nov 2025 10:30:00 UTC
-# Duration:            2m15s
+# Started:             5 minutes ago
+# Duration:            135s
 ```
 
 **Get the last build:**
@@ -158,7 +158,7 @@ jenkins get-build-log my-application-build 42
 
 **"token not found" or authentication errors**
 - Verify your API token is still valid
-- Re-run the configure command to update the token: `jenkins configure your-jenkins-host.com your-username`
+- Re-run the configure command to update the token: `jenkins configure https://your-jenkins-host.com your-username`
 - Make sure your Jenkins user has permission to access the jobs
 
 **Connection errors**
