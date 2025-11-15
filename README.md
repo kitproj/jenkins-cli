@@ -104,13 +104,15 @@ The `jenkins` CLI can be configured in two ways:
    jenkins configure https://your-jenkins-host.com your-username
    # Then enter your API token when prompted
    ```
-   This stores the host and username in `~/.config/jenkins-cli/config.json` and the token securely in your system's keyring.
+   This stores the URL and username in `~/.config/jenkins-cli/config.json` and the token securely in your system's keyring.
    
-   **Note:** Provide the full URL including the protocol (e.g., `https://jenkins.example.com` or `http://localhost:8080`)
+   **Note:** The URL should be a fully formed URL including the protocol (e.g., `https://jenkins.example.com` or `http://localhost:8080`). If your Jenkins instance is at a subpath, include it in the URL (e.g., `https://example.com/jenkins`).
 
 2. **Using environment variables**:
    ```bash
-   export JENKINS_HOST=https://your-jenkins-host.com
+   export JENKINS_URL=https://your-jenkins-host.com
+   # Or with a subpath:
+   # export JENKINS_URL=https://your-jenkins-host.com/jenkins
    export JENKINS_USER=your-username
    export JENKINS_TOKEN=your-api-token
    ```
@@ -120,7 +122,7 @@ The `jenkins` CLI can be configured in two ways:
 
 ```
 Usage:
-  jenkins configure <host> [username] - Configure Jenkins host and API token (reads token from stdin)
+  jenkins configure <url> [username] - Configure Jenkins URL and API token (reads token from stdin)
   jenkins list-jobs - List all Jenkins jobs
   jenkins get-job <job-name> - Get details of a specific job
   jenkins build-job <job-name> - Trigger a build for a job
@@ -135,6 +137,12 @@ Usage:
 **Configure Jenkins CLI:**
 ```bash
 jenkins configure https://jenkins.example.com myusername
+# Enter your API token when prompted
+```
+
+**Configure Jenkins CLI with a base path (e.g., for Jenkins at https://example.com/jenkins):**
+```bash
+jenkins configure https://example.com/jenkins myusername
 # Enter your API token when prompted
 ```
 
@@ -213,9 +221,9 @@ The MCP server communicates over standard input/output (stdio) and provides the 
 ### MCP Server Configuration
 
 The MCP server uses the same configuration as the CLI:
-- Configuration file: `~/.config/jenkins-cli/config.json` (host and username)
+- Configuration file: `~/.config/jenkins-cli/config.json` (URL and username)
 - Credentials stored securely in system keyring
-- Environment variables `JENKINS_HOST` and `JENKINS_TOKEN` are also supported
+- Environment variables `JENKINS_URL` and `JENKINS_TOKEN` are also supported
 
 ### Using with AI Agents
 
@@ -237,8 +245,8 @@ Example MCP client configuration:
 
 ### Common Issues
 
-**"host is required" error**
-- Make sure you've run `jenkins configure <host>` or set the `JENKINS_HOST` environment variable
+**"Jenkins URL is required" error**
+- Make sure you've run `jenkins configure <url>` or set the `JENKINS_URL` environment variable
 - Check that the config file exists: `cat ~/.config/jenkins-cli/config.json`
 
 **"token not found" or authentication errors**
@@ -247,7 +255,7 @@ Example MCP client configuration:
 - Make sure your Jenkins user has permission to access the jobs
 
 **Connection errors**
-- Verify the Jenkins host is accessible
+- Verify the Jenkins URL is accessible
 - Check if your Jenkins instance requires HTTPS
 - Some corporate networks may require proxy configuration
 

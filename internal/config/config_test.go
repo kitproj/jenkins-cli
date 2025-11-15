@@ -21,27 +21,64 @@ func TestSaveLoadConfig(t *testing.T) {
 		}
 	}()
 
-	testHost := "jenkins.example.com"
+	testURL := "https://jenkins.example.com/ci"
 	testUsername := "testuser"
 
 	// Test SaveConfig
-	err := SaveConfig(testHost, testUsername)
+	err := SaveConfig(testURL, testUsername)
 	if err != nil {
 		t.Fatalf("Failed to save config: %v", err)
 	}
 
 	// Test LoadConfig
-	retrievedHost, retrievedUsername, err := LoadConfig()
+	retrievedURL, retrievedUsername, err := LoadConfig()
 	if err != nil {
 		t.Fatalf("Failed to load config: %v", err)
 	}
 
-	if retrievedHost != testHost {
-		t.Errorf("Expected host %q, got %q", testHost, retrievedHost)
+	if retrievedURL != testURL {
+		t.Errorf("Expected URL %q, got %q", testURL, retrievedURL)
 	}
 
 	if retrievedUsername != testUsername {
 		t.Errorf("Expected username %q, got %q", testUsername, retrievedUsername)
+	}
+}
+
+// TestSaveConfigPreservesTrailingSlash tests that SaveConfig preserves trailing slashes
+func TestSaveConfigPreservesTrailingSlash(t *testing.T) {
+	// Create a temporary directory for testing
+	tmpDir := t.TempDir()
+
+	// Override the config directory
+	origConfigDir := os.Getenv("XDG_CONFIG_HOME")
+	os.Setenv("XDG_CONFIG_HOME", tmpDir)
+	defer func() {
+		if origConfigDir != "" {
+			os.Setenv("XDG_CONFIG_HOME", origConfigDir)
+		} else {
+			os.Unsetenv("XDG_CONFIG_HOME")
+		}
+	}()
+
+	testURLWithTrailingSlash := "https://jenkins.example.com/"
+	expectedURL := "https://jenkins.example.com/"
+	testUsername := "testuser"
+
+	// Test SaveConfig with trailing slash
+	err := SaveConfig(testURLWithTrailingSlash, testUsername)
+	if err != nil {
+		t.Fatalf("Failed to save config: %v", err)
+	}
+
+	// Test LoadConfig - should return URL with trailing slash preserved
+	retrievedURL, _, err := LoadConfig()
+	if err != nil {
+		t.Fatalf("Failed to load config: %v", err)
+	}
+
+	if retrievedURL != expectedURL {
+		t.Errorf("Expected URL with trailing slash preserved %q, got %q", expectedURL, retrievedURL)
 	}
 }
 
@@ -61,22 +98,22 @@ func TestSaveLoadConfigWithoutUsername(t *testing.T) {
 		}
 	}()
 
-	testHost := "jenkins.example.com"
+	testURL := "https://jenkins.example.com"
 
 	// Test SaveConfig without username
-	err := SaveConfig(testHost, "")
+	err := SaveConfig(testURL, "")
 	if err != nil {
 		t.Fatalf("Failed to save config: %v", err)
 	}
 
 	// Test LoadConfig
-	retrievedHost, retrievedUsername, err := LoadConfig()
+	retrievedURL, retrievedUsername, err := LoadConfig()
 	if err != nil {
 		t.Fatalf("Failed to load config: %v", err)
 	}
 
-	if retrievedHost != testHost {
-		t.Errorf("Expected host %q, got %q", testHost, retrievedHost)
+	if retrievedURL != testURL {
+		t.Errorf("Expected URL %q, got %q", testURL, retrievedURL)
 	}
 
 	if retrievedUsername != "" {

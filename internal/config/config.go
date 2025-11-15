@@ -16,7 +16,7 @@ const (
 
 // config represents the jenkins-cli configuration
 type config struct {
-	Host     string `json:"host"`
+	URL      string `json:"url"`
 	Username string `json:"username,omitempty"`
 }
 
@@ -31,8 +31,8 @@ func getConfigPath() (string, error) {
 	return configPath, nil
 }
 
-// SaveConfig saves the host and username to the config file
-func SaveConfig(host, username string) error {
+// SaveConfig saves the URL and username to the config file
+func SaveConfig(url, username string) error {
 	configPath, err := getConfigPath()
 	if err != nil {
 		return err
@@ -44,7 +44,7 @@ func SaveConfig(host, username string) error {
 		return fmt.Errorf("failed to create config directory: %w", err)
 	}
 
-	cfg := config{Host: host, Username: username}
+	cfg := config{URL: url, Username: username}
 	data, err := json.MarshalIndent(cfg, "", "  ")
 	if err != nil {
 		return fmt.Errorf("failed to marshal config: %w", err)
@@ -57,7 +57,7 @@ func SaveConfig(host, username string) error {
 	return nil
 }
 
-// LoadConfig loads the host and username from the config file
+// LoadConfig loads the URL and username from the config file
 func LoadConfig() (string, string, error) {
 	configPath, err := getConfigPath()
 	if err != nil {
@@ -74,15 +74,15 @@ func LoadConfig() (string, string, error) {
 		return "", "", fmt.Errorf("failed to parse config file: %w", err)
 	}
 
-	return cfg.Host, cfg.Username, nil
+	return cfg.URL, cfg.Username, nil
 }
 
 // SaveToken saves the token to the keyring
-func SaveToken(host, token string) error {
-	return keyring.Set(serviceName, host, token)
+func SaveToken(url, token string) error {
+	return keyring.Set(serviceName, url, token)
 }
 
 // LoadToken loads the token from the keyring
-func LoadToken(host string) (string, error) {
-	return keyring.Get(serviceName, host)
+func LoadToken(url string) (string, error) {
+	return keyring.Get(serviceName, url)
 }

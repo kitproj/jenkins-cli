@@ -13,23 +13,23 @@ import (
 
 // runMCPServer starts the MCP server that communicates over stdio using the mcp-go library
 func runMCPServer(ctx context.Context) error {
-	// Load host and username from config file
-	host, username, err := config.LoadConfig()
+	// Load URL and username from config file
+	url, username, err := config.LoadConfig()
 	if err != nil {
-		return fmt.Errorf("Jenkins host must be configured (use 'jenkins configure <host>' or set JENKINS_HOST env var)")
+		return fmt.Errorf("Jenkins URL must be configured (use 'jenkins configure <url>' or set JENKINS_URL env var)")
 	}
 
 	// Load token from keyring
-	token, err := config.LoadToken(host)
+	token, err := config.LoadToken(url)
 	if err != nil {
-		return fmt.Errorf("Jenkins token must be set (use 'jenkins configure <host>' or set JENKINS_TOKEN env var)")
+		return fmt.Errorf("Jenkins token must be set (use 'jenkins configure <url>' or set JENKINS_TOKEN env var)")
 	}
 
-	if host == "" {
-		return fmt.Errorf("Jenkins host must be configured (use 'jenkins configure <host>')")
+	if url == "" {
+		return fmt.Errorf("Jenkins URL must be configured (use 'jenkins configure <url>')")
 	}
 	if token == "" {
-		return fmt.Errorf("Jenkins token must be set (use 'jenkins configure <host>')")
+		return fmt.Errorf("Jenkins token must be set (use 'jenkins configure <url>')")
 	}
 
 	// Use username from config, or default to "admin"
@@ -37,8 +37,8 @@ func runMCPServer(ctx context.Context) error {
 		username = "admin"
 	}
 
-	// Create Jenkins client
-	jenkinsClient, err := gojenkins.CreateJenkins(nil, host, username, token).Init(ctx)
+	// Create Jenkins client with the full URL
+	jenkinsClient, err := gojenkins.CreateJenkins(nil, url, username, token).Init(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to create Jenkins client: %w", err)
 	}
