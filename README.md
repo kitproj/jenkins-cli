@@ -18,10 +18,49 @@ Like `jq`, it is designed to be a single, lightweight binary without the overhea
 
 ### Supported Platforms
 
-Binaries will be available for:
+Binaries are available for:
 - **Linux**: amd64, arm64
 - **macOS**: amd64 (Intel), arm64 (Apple Silicon)
 - **Windows**: amd64
+
+### Download and Install
+
+Download the binary for your platform from the [release page](https://github.com/kitproj/jenkins-cli/releases).
+
+#### Linux
+
+**For Linux (amd64):**
+```bash
+sudo curl -fsL -o /usr/local/bin/jenkins https://github.com/kitproj/jenkins-cli/releases/download/v0.0.1/jenkins_v0.0.1_linux_amd64
+sudo chmod +x /usr/local/bin/jenkins
+```
+
+**For Linux (arm64):**
+```bash
+sudo curl -fsL -o /usr/local/bin/jenkins https://github.com/kitproj/jenkins-cli/releases/download/v0.0.1/jenkins_v0.0.1_linux_arm64
+sudo chmod +x /usr/local/bin/jenkins
+```
+
+#### macOS
+
+**For macOS (Apple Silicon/arm64):**
+```bash
+sudo curl -fsL -o /usr/local/bin/jenkins https://github.com/kitproj/jenkins-cli/releases/download/v0.0.1/jenkins_v0.0.1_darwin_arm64
+sudo chmod +x /usr/local/bin/jenkins
+```
+
+**For macOS (Intel/amd64):**
+```bash
+sudo curl -fsL -o /usr/local/bin/jenkins https://github.com/kitproj/jenkins-cli/releases/download/v0.0.1/jenkins_v0.0.1_darwin_amd64
+sudo chmod +x /usr/local/bin/jenkins
+```
+
+#### Verify Installation
+
+After installing, verify the installation works:
+```bash
+jenkins -h
+```
 
 ### Build from Source
 
