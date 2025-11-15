@@ -11,7 +11,7 @@ Like `jq`, it is designed to be a single, lightweight binary without the overhea
 - 🔐 **Secure credential storage** - Uses system keyring for API tokens
 - 📦 **Single binary** - No dependencies, just download and run
 - 🚀 **Simple commands** - Intuitive command structure
-- 🔧 **Jenkins operations** - List jobs, trigger builds, get build status, view logs
+- 🔧 **Jenkins operations** - Search jobs, trigger builds, get build status, view logs
 - 🤖 **MCP Server** - Model Context Protocol server for AI agent integration
 
 ## Installation
@@ -123,7 +123,7 @@ The `jenkins` CLI can be configured in two ways:
 ```
 Usage:
   jenkins configure <url> [username] - Configure Jenkins URL and API token (reads token from stdin)
-  jenkins list-jobs - List all Jenkins jobs
+  jenkins search-jobs [pattern] - Search Jenkins jobs (optionally filter by pattern)
   jenkins get-job <job-name> - Get details of a specific job
   jenkins build-job <job-name> - Trigger a build for a job
   jenkins get-build <job-name> <build-number> - Get details of a specific build
@@ -148,13 +148,23 @@ jenkins configure https://example.com/jenkins myusername
 
 **List all jobs:**
 ```bash
-jenkins list-jobs
+jenkins search-jobs
 # Output:
 # Found 5 job(s):
 #
 # my-application-build              SUCCESS         https://jenkins.example.com/job/my-application-build/
 # integration-tests                 FAILURE         https://jenkins.example.com/job/integration-tests/
 # nightly-deploy                    SUCCESS         https://jenkins.example.com/job/nightly-deploy/
+```
+
+**Search for specific jobs:**
+```bash
+jenkins search-jobs application
+# Output:
+# Found 2 job(s) matching 'application':
+#
+# my-application-build              SUCCESS         https://jenkins.example.com/job/my-application-build/
+# application-tests                 SUCCESS         https://jenkins.example.com/job/application-tests/
 ```
 
 **Get job details:**
@@ -211,7 +221,7 @@ jenkins mcp-server
 
 The MCP server communicates over standard input/output (stdio) and provides the following tools for AI agents:
 
-- **list_jobs** - List all Jenkins jobs with their status and URL
+- **search_jobs** - Search Jenkins jobs with optional pattern filter
 - **get_job** - Get details of a specific Jenkins job including status, description, and build history
 - **build_job** - Trigger a build for a Jenkins job
 - **get_build** - Get details of a specific build including status, duration, and timestamp

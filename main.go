@@ -31,7 +31,7 @@ func main() {
 		fmt.Fprintf(w, "Usage:\n")
 		fmt.Fprintln(w)
 		fmt.Fprintln(w, "  jenkins configure <url> [username] - Configure Jenkins URL and API token (reads token from stdin)")
-		fmt.Fprintln(w, "  jenkins list-jobs - List all Jenkins jobs")
+		fmt.Fprintln(w, "  jenkins search-jobs [pattern] - Search Jenkins jobs (optionally filter by pattern)")
 		fmt.Fprintln(w, "  jenkins get-job <job-name> - Get details of a specific job")
 		fmt.Fprintln(w, "  jenkins build-job <job-name> - Trigger a build for a job")
 		fmt.Fprintln(w, "  jenkins get-build <job-name> <build-number> - Get details of a specific build")
@@ -69,8 +69,14 @@ func run(ctx context.Context, args []string) error {
 			username = args[2]
 		}
 		return configure(args[1], username)
-	case "list-jobs":
-		return executeCommand(ctx, listJobs)
+	case "search-jobs":
+		pattern := ""
+		if len(args) >= 2 {
+			pattern = args[1]
+		}
+		return executeCommand(ctx, func(ctx context.Context) error {
+			return searchJobs(ctx, pattern)
+		})
 	case "get-job":
 		if len(args) < 2 {
 			return fmt.Errorf("usage: jenkins get-job <job-name>")
@@ -216,20 +222,41 @@ func configure(jenkinsURL, username string) error {
 	return nil
 }
 
-// listJobs lists all Jenkins jobs
-func listJobs(ctx context.Context) error {
+// searchJobs searches Jenkins jobs, optionally filtering by pattern
+func searchJobs(ctx context.Context, pattern string) error {
 	jobs, err := jenkins.GetAllJobs(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to list jobs: %w", err)
+		return fmt.Errorf("failed to search jobs: %w", err)
 	}
 
-	if len(jobs) == 0 {
-		fmt.Println("No jobs found")
+	// Filter jobs by pattern if provided
+	var filteredJobs []*gojenkins.Job
+	if pattern != "" {
+		pattern = strings.ToLower(pattern)
+		for _, job := range jobs {
+			if strings.Contains(strings.ToLower(job.GetName()), pattern) {
+				filteredJobs = append(filteredJobs, job)
+			}
+		}
+	} else {
+		filteredJobs = jobs
+	}
+
+	if len(filteredJobs) == 0 {
+		if pattern != "" {
+			fmt.Printf("No jobs found matching pattern: %s\n", pattern)
+		} else {
+			fmt.Println("No jobs found")
+		}
 		return nil
 	}
 
-	fmt.Printf("Found %d job(s):\n\n", len(jobs))
-	for _, job := range jobs {
+	if pattern != "" {
+		fmt.Printf("Found %d job(s) matching '%s':\n\n", len(filteredJobs), pattern)
+	} else {
+		fmt.Printf("Found %d job(s):\n\n", len(filteredJobs))
+	}
+	for _, job := range filteredJobs {
 		status := getStatusFromColor(job.Raw.Color)
 		fmt.Printf("%-40s %-15s %s\n", job.GetName(), status, job.Raw.URL)
 	}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/bndr/gojenkins"
 	"github.com/kitproj/jenkins-cli/internal/config"
@@ -50,12 +51,15 @@ func runMCPServer(ctx context.Context) error {
 		server.WithToolCapabilities(true),
 	)
 
-	// Add list-jobs tool
-	listJobsTool := mcp.NewTool("list_jobs",
-		mcp.WithDescription("List all Jenkins jobs with their status and URL"),
+	// Add search-jobs tool
+	searchJobsTool := mcp.NewTool("search_jobs",
+		mcp.WithDescription("Search Jenkins jobs with optional pattern filter"),
+		mcp.WithString("pattern",
+			mcp.Description("Optional search pattern to filter jobs by name (case-insensitive)"),
+		),
 	)
-	s.AddTool(listJobsTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		return listJobsHandler(ctx, jenkinsClient, request)
+	s.AddTool(searchJobsTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		return searchJobsHandler(ctx, jenkinsClient, request)
 	})
 
 	// Add get-job tool
@@ -130,18 +134,42 @@ func runMCPServer(ctx context.Context) error {
 	return server.ServeStdio(s)
 }
 
-func listJobsHandler(ctx context.Context, client *gojenkins.Jenkins, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+func searchJobsHandler(ctx context.Context, client *gojenkins.Jenkins, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	// Get optional pattern parameter
+	pattern := request.GetString("pattern", "")
+
 	jobs, err := client.GetAllJobs(ctx)
 	if err != nil {
-		return mcp.NewToolResultError(fmt.Sprintf("Failed to list jobs: %v", err)), nil
+		return mcp.NewToolResultError(fmt.Sprintf("Failed to search jobs: %v", err)), nil
 	}
 
-	if len(jobs) == 0 {
+	// Filter jobs by pattern if provided
+	var filteredJobs []*gojenkins.Job
+	if pattern != "" {
+		patternLower := strings.ToLower(pattern)
+		for _, job := range jobs {
+			if strings.Contains(strings.ToLower(job.GetName()), patternLower) {
+				filteredJobs = append(filteredJobs, job)
+			}
+		}
+	} else {
+		filteredJobs = jobs
+	}
+
+	if len(filteredJobs) == 0 {
+		if pattern != "" {
+			return mcp.NewToolResultText(fmt.Sprintf("No jobs found matching pattern: %s", pattern)), nil
+		}
 		return mcp.NewToolResultText("No jobs found"), nil
 	}
 
-	result := fmt.Sprintf("Found %d job(s):\n\n", len(jobs))
-	for _, job := range jobs {
+	var result string
+	if pattern != "" {
+		result = fmt.Sprintf("Found %d job(s) matching '%s':\n\n", len(filteredJobs), pattern)
+	} else {
+		result = fmt.Sprintf("Found %d job(s):\n\n", len(filteredJobs))
+	}
+	for _, job := range filteredJobs {
 		status := getStatusFromColor(job.Raw.Color)
 		result += fmt.Sprintf("%-40s %-15s %s\n", job.GetName(), status, job.Raw.URL)
 	}
