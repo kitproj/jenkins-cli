@@ -135,11 +135,6 @@ func executeCommand(ctx context.Context, fn func(context.Context) error) error {
 		}
 	}
 
-	// Remove trailing slashes from URL if needed
-	if url != "" {
-		url = strings.TrimRight(url, "/")
-	}
-
 	// Load token from keyring, or fall back to env var
 	if token == "" {
 		token = os.Getenv("JENKINS_TOKEN")
@@ -182,9 +177,6 @@ func configure(jenkinsURL, username string) error {
 	if jenkinsURL == "" {
 		return fmt.Errorf("Jenkins URL is required")
 	}
-
-	// Remove trailing slashes only - URL must be valid
-	jenkinsURL = strings.TrimRight(jenkinsURL, "/")
 
 	if username == "" {
 		username = "admin"

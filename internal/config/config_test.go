@@ -45,8 +45,8 @@ func TestSaveLoadConfig(t *testing.T) {
 	}
 }
 
-// TestSaveConfigRemovesTrailingSlash tests that SaveConfig removes trailing slashes
-func TestSaveConfigRemovesTrailingSlash(t *testing.T) {
+// TestSaveConfigPreservesTrailingSlash tests that SaveConfig preserves trailing slashes
+func TestSaveConfigPreservesTrailingSlash(t *testing.T) {
 	// Create a temporary directory for testing
 	tmpDir := t.TempDir()
 
@@ -62,7 +62,7 @@ func TestSaveConfigRemovesTrailingSlash(t *testing.T) {
 	}()
 
 	testURLWithTrailingSlash := "https://jenkins.example.com/"
-	expectedURL := "https://jenkins.example.com"
+	expectedURL := "https://jenkins.example.com/"
 	testUsername := "testuser"
 
 	// Test SaveConfig with trailing slash
@@ -71,14 +71,14 @@ func TestSaveConfigRemovesTrailingSlash(t *testing.T) {
 		t.Fatalf("Failed to save config: %v", err)
 	}
 
-	// Test LoadConfig - should return URL without trailing slash
+	// Test LoadConfig - should return URL with trailing slash preserved
 	retrievedURL, _, err := LoadConfig()
 	if err != nil {
 		t.Fatalf("Failed to load config: %v", err)
 	}
 
 	if retrievedURL != expectedURL {
-		t.Errorf("Expected URL without trailing slash %q, got %q", expectedURL, retrievedURL)
+		t.Errorf("Expected URL with trailing slash preserved %q, got %q", expectedURL, retrievedURL)
 	}
 }
 

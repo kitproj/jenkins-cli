@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/kitproj/jenkins-cli/internal/keyring"
 )
@@ -34,9 +33,6 @@ func getConfigPath() (string, error) {
 
 // SaveConfig saves the URL and username to the config file
 func SaveConfig(url, username string) error {
-	// Remove trailing slashes only
-	url = strings.TrimRight(url, "/")
-
 	configPath, err := getConfigPath()
 	if err != nil {
 		return err
