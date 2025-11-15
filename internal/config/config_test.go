@@ -59,40 +59,118 @@ func TestNormalizeHost(t *testing.T) {
 	}
 }
 
-// TestFormatHostURL tests the host URL formatting function
-func TestFormatHostURL(t *testing.T) {
+// TestNormalizePath tests the path normalization function
+func TestNormalizePath(t *testing.T) {
 	tests := []struct {
 		name     string
 		input    string
 		expected string
 	}{
 		{
-			name:     "host without protocol",
-			input:    "build.intuit.com",
-			expected: "https://build.intuit.com",
+			name:     "path without slashes",
+			input:    "jenkins",
+			expected: "jenkins",
 		},
 		{
-			name:     "host with https protocol - should be normalized first",
-			input:    "https://build.intuit.com",
-			expected: "https://build.intuit.com",
+			name:     "path with leading slash",
+			input:    "/jenkins",
+			expected: "jenkins",
 		},
 		{
-			name:     "host with http protocol - should convert to https",
-			input:    "http://build.intuit.com",
-			expected: "https://build.intuit.com",
+			name:     "path with trailing slash",
+			input:    "jenkins/",
+			expected: "jenkins",
 		},
 		{
-			name:     "localhost with port",
-			input:    "localhost:8080",
-			expected: "https://localhost:8080",
+			name:     "path with both slashes",
+			input:    "/jenkins/",
+			expected: "jenkins",
+		},
+		{
+			name:     "empty path",
+			input:    "",
+			expected: "",
+		},
+		{
+			name:     "path with multiple segments",
+			input:    "/ci/jenkins/",
+			expected: "ci/jenkins",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := FormatHostURL(tt.input)
+			result := NormalizePath(tt.input)
 			if result != tt.expected {
-				t.Errorf("FormatHostURL(%q) = %q, want %q", tt.input, result, tt.expected)
+				t.Errorf("NormalizePath(%q) = %q, want %q", tt.input, result, tt.expected)
+			}
+		})
+	}
+}
+
+// TestFormatHostURL tests the host URL formatting function
+func TestFormatHostURL(t *testing.T) {
+	tests := []struct {
+		name     string
+		host     string
+		path     string
+		expected string
+	}{
+		{
+			name:     "host without protocol or path",
+			host:     "build.intuit.com",
+			path:     "",
+			expected: "https://build.intuit.com",
+		},
+		{
+			name:     "host with https protocol - should be normalized first",
+			host:     "https://build.intuit.com",
+			path:     "",
+			expected: "https://build.intuit.com",
+		},
+		{
+			name:     "host with http protocol - should convert to https",
+			host:     "http://build.intuit.com",
+			path:     "",
+			expected: "https://build.intuit.com",
+		},
+		{
+			name:     "localhost with port",
+			host:     "localhost:8080",
+			path:     "",
+			expected: "https://localhost:8080",
+		},
+		{
+			name:     "host with path",
+			host:     "build.intuit.com",
+			path:     "jenkins",
+			expected: "https://build.intuit.com/jenkins",
+		},
+		{
+			name:     "host with path having leading slash",
+			host:     "build.intuit.com",
+			path:     "/jenkins",
+			expected: "https://build.intuit.com/jenkins",
+		},
+		{
+			name:     "host with path having trailing slash",
+			host:     "build.intuit.com",
+			path:     "jenkins/",
+			expected: "https://build.intuit.com/jenkins",
+		},
+		{
+			name:     "host with path having both slashes",
+			host:     "build.intuit.com",
+			path:     "/jenkins/",
+			expected: "https://build.intuit.com/jenkins",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := FormatHostURL(tt.host, tt.path)
+			if result != tt.expected {
+				t.Errorf("FormatHostURL(%q, %q) = %q, want %q", tt.host, tt.path, result, tt.expected)
 			}
 		})
 	}
@@ -115,22 +193,27 @@ func TestSaveLoadConfig(t *testing.T) {
 	}()
 
 	testHost := "jenkins.example.com"
+	testPath := "jenkins"
 	testUsername := "testuser"
 
 	// Test SaveConfig
-	err := SaveConfig(testHost, testUsername)
+	err := SaveConfig(testHost, testPath, testUsername)
 	if err != nil {
 		t.Fatalf("Failed to save config: %v", err)
 	}
 
 	// Test LoadConfig
-	retrievedHost, retrievedUsername, err := LoadConfig()
+	retrievedHost, retrievedPath, retrievedUsername, err := LoadConfig()
 	if err != nil {
 		t.Fatalf("Failed to load config: %v", err)
 	}
 
 	if retrievedHost != testHost {
 		t.Errorf("Expected host %q, got %q", testHost, retrievedHost)
+	}
+
+	if retrievedPath != testPath {
+		t.Errorf("Expected path %q, got %q", testPath, retrievedPath)
 	}
 
 	if retrievedUsername != testUsername {
@@ -159,13 +242,13 @@ func TestSaveConfigNormalizesHost(t *testing.T) {
 	testUsername := "testuser"
 
 	// Test SaveConfig with protocol
-	err := SaveConfig(testHostWithProtocol, testUsername)
+	err := SaveConfig(testHostWithProtocol, "", testUsername)
 	if err != nil {
 		t.Fatalf("Failed to save config: %v", err)
 	}
 
 	// Test LoadConfig - should return host without protocol
-	retrievedHost, _, err := LoadConfig()
+	retrievedHost, _, _, err := LoadConfig()
 	if err != nil {
 		t.Fatalf("Failed to load config: %v", err)
 	}
@@ -193,20 +276,24 @@ func TestSaveLoadConfigWithoutUsername(t *testing.T) {
 
 	testHost := "jenkins.example.com"
 
-	// Test SaveConfig without username
-	err := SaveConfig(testHost, "")
+	// Test SaveConfig without username or path
+	err := SaveConfig(testHost, "", "")
 	if err != nil {
 		t.Fatalf("Failed to save config: %v", err)
 	}
 
 	// Test LoadConfig
-	retrievedHost, retrievedUsername, err := LoadConfig()
+	retrievedHost, retrievedPath, retrievedUsername, err := LoadConfig()
 	if err != nil {
 		t.Fatalf("Failed to load config: %v", err)
 	}
 
 	if retrievedHost != testHost {
 		t.Errorf("Expected host %q, got %q", testHost, retrievedHost)
+	}
+
+	if retrievedPath != "" {
+		t.Errorf("Expected empty path, got %q", retrievedPath)
 	}
 
 	if retrievedUsername != "" {
@@ -231,7 +318,7 @@ func TestLoadConfigNotFound(t *testing.T) {
 	}()
 
 	// Try to load from non-existent config
-	_, _, err := LoadConfig()
+	_, _, _, err := LoadConfig()
 	if err == nil {
 		t.Error("Expected error when loading non-existent config, got nil")
 	}

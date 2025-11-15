@@ -68,10 +68,18 @@ The `jenkins` CLI can be configured in two ways:
    This stores the host and username in `~/.config/jenkins-cli/config.json` and the token securely in your system's keyring.
    
    **Note:** The host should be provided WITHOUT the protocol prefix (e.g., `jenkins.example.com` or `localhost:8080`). The CLI will always use HTTPS. If you include `https://` or `http://`, it will be automatically removed.
+   
+   **Base Path:** If your Jenkins instance is running at a subpath (e.g., `https://example.com/jenkins`), set the `JENKINS_PATH` environment variable:
+   ```bash
+   export JENKINS_PATH=jenkins
+   jenkins configure your-jenkins-host.com your-username
+   ```
+   The path will be saved to the config file and automatically used for all commands.
 
 2. **Using environment variables**:
    ```bash
    export JENKINS_HOST=your-jenkins-host.com
+   export JENKINS_PATH=jenkins  # Optional: for Jenkins at a subpath (e.g., /jenkins)
    export JENKINS_USER=your-username
    export JENKINS_TOKEN=your-api-token
    ```
@@ -96,6 +104,13 @@ Usage:
 **Configure Jenkins CLI:**
 ```bash
 jenkins configure jenkins.example.com myusername
+# Enter your API token when prompted
+```
+
+**Configure Jenkins CLI with a base path (e.g., for Jenkins at https://example.com/jenkins):**
+```bash
+export JENKINS_PATH=jenkins
+jenkins configure example.com myusername
 # Enter your API token when prompted
 ```
 
@@ -174,9 +189,9 @@ The MCP server communicates over standard input/output (stdio) and provides the 
 ### MCP Server Configuration
 
 The MCP server uses the same configuration as the CLI:
-- Configuration file: `~/.config/jenkins-cli/config.json` (host and username)
+- Configuration file: `~/.config/jenkins-cli/config.json` (host, path, and username)
 - Credentials stored securely in system keyring
-- Environment variables `JENKINS_HOST` and `JENKINS_TOKEN` are also supported
+- Environment variables `JENKINS_HOST`, `JENKINS_PATH`, and `JENKINS_TOKEN` are also supported
 
 ### Using with AI Agents
 

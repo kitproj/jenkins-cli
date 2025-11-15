@@ -18,6 +18,7 @@ const (
 // config represents the jenkins-cli configuration
 type config struct {
 	Host     string `json:"host"`
+	Path     string `json:"path,omitempty"`
 	Username string `json:"username,omitempty"`
 }
 
@@ -33,12 +34,26 @@ func NormalizeHost(host string) string {
 	return host
 }
 
-// FormatHostURL returns the full HTTPS URL for the host
+// NormalizePath removes leading and trailing slashes from path if present
+// Paths should be stored without leading/trailing slashes (e.g., "jenkins" not "/jenkins/")
+func NormalizePath(path string) string {
+	// Remove leading and trailing slashes
+	path = strings.Trim(path, "/")
+	return path
+}
+
+// FormatHostURL returns the full HTTPS URL for the host with optional path
 // Always uses HTTPS as required
-func FormatHostURL(host string) string {
+func FormatHostURL(host, path string) string {
 	// Normalize first to ensure no protocol prefix
 	host = NormalizeHost(host)
-	return "https://" + host
+	path = NormalizePath(path)
+	
+	url := "https://" + host
+	if path != "" {
+		url = url + "/" + path
+	}
+	return url
 }
 
 // getConfigPath returns the path to the config file
@@ -52,10 +67,12 @@ func getConfigPath() (string, error) {
 	return configPath, nil
 }
 
-// SaveConfig saves the host and username to the config file
-func SaveConfig(host, username string) error {
+// SaveConfig saves the host, path, and username to the config file
+func SaveConfig(host, path, username string) error {
 	// Normalize host to remove any protocol prefix
 	host = NormalizeHost(host)
+	// Normalize path to remove leading/trailing slashes
+	path = NormalizePath(path)
 
 	configPath, err := getConfigPath()
 	if err != nil {
@@ -68,7 +85,7 @@ func SaveConfig(host, username string) error {
 		return fmt.Errorf("failed to create config directory: %w", err)
 	}
 
-	cfg := config{Host: host, Username: username}
+	cfg := config{Host: host, Path: path, Username: username}
 	data, err := json.MarshalIndent(cfg, "", "  ")
 	if err != nil {
 		return fmt.Errorf("failed to marshal config: %w", err)
@@ -81,24 +98,24 @@ func SaveConfig(host, username string) error {
 	return nil
 }
 
-// LoadConfig loads the host and username from the config file
-func LoadConfig() (string, string, error) {
+// LoadConfig loads the host, path, and username from the config file
+func LoadConfig() (string, string, string, error) {
 	configPath, err := getConfigPath()
 	if err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
 
 	data, err := os.ReadFile(configPath)
 	if err != nil {
-		return "", "", fmt.Errorf("failed to read config file: %w", err)
+		return "", "", "", fmt.Errorf("failed to read config file: %w", err)
 	}
 
 	var cfg config
 	if err := json.Unmarshal(data, &cfg); err != nil {
-		return "", "", fmt.Errorf("failed to parse config file: %w", err)
+		return "", "", "", fmt.Errorf("failed to parse config file: %w", err)
 	}
 
-	return cfg.Host, cfg.Username, nil
+	return cfg.Host, cfg.Path, cfg.Username, nil
 }
 
 // SaveToken saves the token to the keyring

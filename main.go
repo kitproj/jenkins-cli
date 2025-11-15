@@ -17,6 +17,7 @@ import (
 
 var (
 	host    string
+	path    string
 	token   string
 	user    string
 	jenkins *gojenkins.Jenkins
@@ -125,19 +126,31 @@ func executeCommand(ctx context.Context, fn func(context.Context) error) error {
 	if host == "" {
 		var err error
 		var configUsername string
-		host, configUsername, err = config.LoadConfig()
+		var configPath string
+		host, configPath, configUsername, err = config.LoadConfig()
 		if err != nil {
 			// Fall back to environment variable
 			host = os.Getenv("JENKINS_HOST")
-		} else if user == "" && configUsername != "" {
-			// Use username from config if not already set
-			user = configUsername
+			path = os.Getenv("JENKINS_PATH")
+		} else {
+			if path == "" {
+				path = configPath
+			}
+			if user == "" && configUsername != "" {
+				// Use username from config if not already set
+				user = configUsername
+			}
 		}
 	}
 
 	// Normalize host from environment variable if it has a protocol
 	if host != "" {
 		host = config.NormalizeHost(host)
+	}
+
+	// Normalize path
+	if path != "" {
+		path = config.NormalizePath(path)
 	}
 
 	// Load token from keyring, or fall back to env var
@@ -168,7 +181,7 @@ func executeCommand(ctx context.Context, fn func(context.Context) error) error {
 	}
 
 	// Create Jenkins client with HTTPS URL
-	hostURL := config.FormatHostURL(host)
+	hostURL := config.FormatHostURL(host, path)
 	var err error
 	jenkins, err = gojenkins.CreateJenkins(nil, hostURL, user, token).Init(ctx)
 	if err != nil {
@@ -186,13 +199,17 @@ func configure(host, username string) error {
 
 	// Normalize the host (remove protocol if present)
 	normalizedHost := config.NormalizeHost(host)
+	
+	// Get path from environment variable if set
+	pathFromEnv := os.Getenv("JENKINS_PATH")
+	normalizedPath := config.NormalizePath(pathFromEnv)
 
 	if username == "" {
 		username = "admin"
 	}
 
 	// Display the HTTPS URL to the user
-	hostURL := config.FormatHostURL(normalizedHost)
+	hostURL := config.FormatHostURL(normalizedHost, normalizedPath)
 	fmt.Fprintf(os.Stderr, "To create an API token in Jenkins:\n")
 	fmt.Fprintf(os.Stderr, "1. Go to: %s/user/%s/configure\n", hostURL, username)
 	fmt.Fprintf(os.Stderr, "2. Click 'Add new Token' under API Token section\n")
@@ -212,8 +229,8 @@ func configure(host, username string) error {
 		return fmt.Errorf("token cannot be empty")
 	}
 
-	// Save host and username to config file (SaveConfig will normalize the host)
-	if err := config.SaveConfig(normalizedHost, username); err != nil {
+	// Save host, path, and username to config file (SaveConfig will normalize both)
+	if err := config.SaveConfig(normalizedHost, normalizedPath, username); err != nil {
 		return err
 	}
 
@@ -222,7 +239,11 @@ func configure(host, username string) error {
 		return err
 	}
 
-	fmt.Fprintf(os.Stderr, "Configuration saved successfully for host: %s (username: %s, override with JENKINS_USER env var)\n", normalizedHost, username)
+	if normalizedPath != "" {
+		fmt.Fprintf(os.Stderr, "Configuration saved successfully for host: %s (path: %s, username: %s, override with JENKINS_PATH and JENKINS_USER env vars)\n", normalizedHost, normalizedPath, username)
+	} else {
+		fmt.Fprintf(os.Stderr, "Configuration saved successfully for host: %s (username: %s, override with JENKINS_USER env var)\n", normalizedHost, username)
+	}
 	return nil
 }
 

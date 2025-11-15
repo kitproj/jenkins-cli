@@ -13,14 +13,17 @@ import (
 
 // runMCPServer starts the MCP server that communicates over stdio using the mcp-go library
 func runMCPServer(ctx context.Context) error {
-	// Load host and username from config file
-	host, username, err := config.LoadConfig()
+	// Load host, path, and username from config file
+	host, path, username, err := config.LoadConfig()
 	if err != nil {
 		return fmt.Errorf("Jenkins host must be configured (use 'jenkins configure <host>' or set JENKINS_HOST env var)")
 	}
 
 	// Normalize host to ensure it doesn't have a protocol
 	host = config.NormalizeHost(host)
+	
+	// Normalize path
+	path = config.NormalizePath(path)
 
 	// Load token from keyring
 	token, err := config.LoadToken(host)
@@ -41,7 +44,7 @@ func runMCPServer(ctx context.Context) error {
 	}
 
 	// Create Jenkins client with HTTPS URL
-	hostURL := config.FormatHostURL(host)
+	hostURL := config.FormatHostURL(host, path)
 	jenkinsClient, err := gojenkins.CreateJenkins(nil, hostURL, username, token).Init(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to create Jenkins client: %w", err)
