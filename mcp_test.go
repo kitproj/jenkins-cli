@@ -8,16 +8,16 @@ import (
 )
 
 func TestRun_MCPServer(t *testing.T) {
-	// Set JENKINS_HOST and JENKINS_TOKEN env vars to get past token check
-	oldHost := os.Getenv("JENKINS_HOST")
+	// Set JENKINS_URL and JENKINS_TOKEN env vars to get past token check
+	oldURL := os.Getenv("JENKINS_URL")
 	oldToken := os.Getenv("JENKINS_TOKEN")
-	os.Setenv("JENKINS_HOST", "http://test-jenkins.example.com")
+	os.Setenv("JENKINS_URL", "http://test-jenkins.example.com")
 	os.Setenv("JENKINS_TOKEN", "test-token")
 	defer func() {
-		if oldHost == "" {
-			os.Unsetenv("JENKINS_HOST")
+		if oldURL == "" {
+			os.Unsetenv("JENKINS_URL")
 		} else {
-			os.Setenv("JENKINS_HOST", oldHost)
+			os.Setenv("JENKINS_URL", oldURL)
 		}
 		if oldToken == "" {
 			os.Unsetenv("JENKINS_TOKEN")
@@ -36,12 +36,12 @@ func TestRun_MCPServer(t *testing.T) {
 }
 
 func TestRun_MCPServerMissingConfig(t *testing.T) {
-	// Unset JENKINS_HOST env var
-	oldHost := os.Getenv("JENKINS_HOST")
-	os.Unsetenv("JENKINS_HOST")
+	// Unset JENKINS_URL env var
+	oldURL := os.Getenv("JENKINS_URL")
+	os.Unsetenv("JENKINS_URL")
 	defer func() {
-		if oldHost != "" {
-			os.Setenv("JENKINS_HOST", oldHost)
+		if oldURL != "" {
+			os.Setenv("JENKINS_URL", oldURL)
 		}
 	}()
 
@@ -52,7 +52,7 @@ func TestRun_MCPServerMissingConfig(t *testing.T) {
 		t.Error("Expected error for missing configuration, got nil")
 	}
 
-	if !strings.Contains(err.Error(), "Jenkins host must be configured") {
-		t.Errorf("Expected 'Jenkins host must be configured' error, got: %v", err)
+	if !strings.Contains(err.Error(), "Jenkins URL must be configured") {
+		t.Errorf("Expected 'Jenkins URL must be configured' error, got: %v", err)
 	}
 }

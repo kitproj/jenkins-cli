@@ -17,42 +17,21 @@ const (
 
 // config represents the jenkins-cli configuration
 type config struct {
-	Host     string `json:"host"`
-	Path     string `json:"path,omitempty"`
+	URL      string `json:"url"`
 	Username string `json:"username,omitempty"`
 }
 
-// NormalizeHost removes the protocol prefix from the host if present
-// Jenkins hosts should never have a protocol prefix (http:// or https://)
-// They should be stored as just the hostname (e.g., build.intuit.com)
-func NormalizeHost(host string) string {
-	// Remove http:// or https:// prefix if present
-	host = strings.TrimPrefix(host, "https://")
-	host = strings.TrimPrefix(host, "http://")
-	// Remove trailing slash if present
-	host = strings.TrimSuffix(host, "/")
-	return host
-}
-
-// NormalizePath removes leading and trailing slashes from path if present
-// Paths should be stored without leading/trailing slashes (e.g., "jenkins" not "/jenkins/")
-func NormalizePath(path string) string {
-	// Remove leading and trailing slashes
-	path = strings.Trim(path, "/")
-	return path
-}
-
-// FormatHostURL returns the full HTTPS URL for the host with optional path
-// Always uses HTTPS as required
-func FormatHostURL(host, path string) string {
-	// Normalize first to ensure no protocol prefix
-	host = NormalizeHost(host)
-	path = NormalizePath(path)
+// NormalizeURL ensures the URL has the https:// protocol and removes trailing slashes
+// Returns the normalized URL that should be stored and used for connections
+func NormalizeURL(url string) string {
+	// Remove trailing slashes
+	url = strings.TrimRight(url, "/")
 	
-	url := "https://" + host
-	if path != "" {
-		url = url + "/" + path
+	// If no protocol is specified, add https://
+	if !strings.HasPrefix(url, "http://") && !strings.HasPrefix(url, "https://") {
+		url = "https://" + url
 	}
+	
 	return url
 }
 
@@ -67,12 +46,10 @@ func getConfigPath() (string, error) {
 	return configPath, nil
 }
 
-// SaveConfig saves the host, path, and username to the config file
-func SaveConfig(host, path, username string) error {
-	// Normalize host to remove any protocol prefix
-	host = NormalizeHost(host)
-	// Normalize path to remove leading/trailing slashes
-	path = NormalizePath(path)
+// SaveConfig saves the URL and username to the config file
+func SaveConfig(url, username string) error {
+	// Normalize URL to ensure it has protocol and no trailing slashes
+	url = NormalizeURL(url)
 
 	configPath, err := getConfigPath()
 	if err != nil {
@@ -85,7 +62,7 @@ func SaveConfig(host, path, username string) error {
 		return fmt.Errorf("failed to create config directory: %w", err)
 	}
 
-	cfg := config{Host: host, Path: path, Username: username}
+	cfg := config{URL: url, Username: username}
 	data, err := json.MarshalIndent(cfg, "", "  ")
 	if err != nil {
 		return fmt.Errorf("failed to marshal config: %w", err)
@@ -98,32 +75,32 @@ func SaveConfig(host, path, username string) error {
 	return nil
 }
 
-// LoadConfig loads the host, path, and username from the config file
-func LoadConfig() (string, string, string, error) {
+// LoadConfig loads the URL and username from the config file
+func LoadConfig() (string, string, error) {
 	configPath, err := getConfigPath()
 	if err != nil {
-		return "", "", "", err
+		return "", "", err
 	}
 
 	data, err := os.ReadFile(configPath)
 	if err != nil {
-		return "", "", "", fmt.Errorf("failed to read config file: %w", err)
+		return "", "", fmt.Errorf("failed to read config file: %w", err)
 	}
 
 	var cfg config
 	if err := json.Unmarshal(data, &cfg); err != nil {
-		return "", "", "", fmt.Errorf("failed to parse config file: %w", err)
+		return "", "", fmt.Errorf("failed to parse config file: %w", err)
 	}
 
-	return cfg.Host, cfg.Path, cfg.Username, nil
+	return cfg.URL, cfg.Username, nil
 }
 
 // SaveToken saves the token to the keyring
-func SaveToken(host, token string) error {
-	return keyring.Set(serviceName, host, token)
+func SaveToken(url, token string) error {
+	return keyring.Set(serviceName, url, token)
 }
 
 // LoadToken loads the token from the keyring
-func LoadToken(host string) (string, error) {
-	return keyring.Get(serviceName, host)
+func LoadToken(url string) (string, error) {
+	return keyring.Get(serviceName, url)
 }
