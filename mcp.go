@@ -19,6 +19,9 @@ func runMCPServer(ctx context.Context) error {
 		return fmt.Errorf("Jenkins host must be configured (use 'jenkins configure <host>' or set JENKINS_HOST env var)")
 	}
 
+	// Normalize host to ensure it doesn't have a protocol
+	host = config.NormalizeHost(host)
+
 	// Load token from keyring
 	token, err := config.LoadToken(host)
 	if err != nil {
@@ -37,8 +40,9 @@ func runMCPServer(ctx context.Context) error {
 		username = "admin"
 	}
 
-	// Create Jenkins client
-	jenkinsClient, err := gojenkins.CreateJenkins(nil, host, username, token).Init(ctx)
+	// Create Jenkins client with HTTPS URL
+	hostURL := config.FormatHostURL(host)
+	jenkinsClient, err := gojenkins.CreateJenkins(nil, hostURL, username, token).Init(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to create Jenkins client: %w", err)
 	}

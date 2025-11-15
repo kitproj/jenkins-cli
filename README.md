@@ -62,16 +62,16 @@ The `jenkins` CLI can be configured in two ways:
 
 1. **Using the configure command (recommended, secure)**:
    ```bash
-   jenkins configure https://your-jenkins-host.com your-username
+   jenkins configure your-jenkins-host.com your-username
    # Then enter your API token when prompted
    ```
    This stores the host and username in `~/.config/jenkins-cli/config.json` and the token securely in your system's keyring.
    
-   **Note:** Provide the full URL including the protocol (e.g., `https://jenkins.example.com` or `http://localhost:8080`)
+   **Note:** The host should be provided WITHOUT the protocol prefix (e.g., `jenkins.example.com` or `localhost:8080`). The CLI will always use HTTPS. If you include `https://` or `http://`, it will be automatically removed.
 
 2. **Using environment variables**:
    ```bash
-   export JENKINS_HOST=https://your-jenkins-host.com
+   export JENKINS_HOST=your-jenkins-host.com
    export JENKINS_USER=your-username
    export JENKINS_TOKEN=your-api-token
    ```
@@ -95,7 +95,7 @@ Usage:
 
 **Configure Jenkins CLI:**
 ```bash
-jenkins configure https://jenkins.example.com myusername
+jenkins configure jenkins.example.com myusername
 # Enter your API token when prompted
 ```
 

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/kitproj/jenkins-cli/internal/keyring"
 )
@@ -20,6 +21,26 @@ type config struct {
 	Username string `json:"username,omitempty"`
 }
 
+// NormalizeHost removes the protocol prefix from the host if present
+// Jenkins hosts should never have a protocol prefix (http:// or https://)
+// They should be stored as just the hostname (e.g., build.intuit.com)
+func NormalizeHost(host string) string {
+	// Remove http:// or https:// prefix if present
+	host = strings.TrimPrefix(host, "https://")
+	host = strings.TrimPrefix(host, "http://")
+	// Remove trailing slash if present
+	host = strings.TrimSuffix(host, "/")
+	return host
+}
+
+// FormatHostURL returns the full HTTPS URL for the host
+// Always uses HTTPS as required
+func FormatHostURL(host string) string {
+	// Normalize first to ensure no protocol prefix
+	host = NormalizeHost(host)
+	return "https://" + host
+}
+
 // getConfigPath returns the path to the config file
 func getConfigPath() (string, error) {
 	configDirPath, err := os.UserConfigDir()
@@ -33,6 +54,9 @@ func getConfigPath() (string, error) {
 
 // SaveConfig saves the host and username to the config file
 func SaveConfig(host, username string) error {
+	// Normalize host to remove any protocol prefix
+	host = NormalizeHost(host)
+
 	configPath, err := getConfigPath()
 	if err != nil {
 		return err

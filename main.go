@@ -135,6 +135,11 @@ func executeCommand(ctx context.Context, fn func(context.Context) error) error {
 		}
 	}
 
+	// Normalize host from environment variable if it has a protocol
+	if host != "" {
+		host = config.NormalizeHost(host)
+	}
+
 	// Load token from keyring, or fall back to env var
 	if token == "" {
 		token = os.Getenv("JENKINS_TOKEN")
@@ -162,9 +167,10 @@ func executeCommand(ctx context.Context, fn func(context.Context) error) error {
 		return fmt.Errorf("token is required")
 	}
 
-	// Create Jenkins client
+	// Create Jenkins client with HTTPS URL
+	hostURL := config.FormatHostURL(host)
 	var err error
-	jenkins, err = gojenkins.CreateJenkins(nil, host, user, token).Init(ctx)
+	jenkins, err = gojenkins.CreateJenkins(nil, hostURL, user, token).Init(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to create Jenkins client: %w", err)
 	}
@@ -178,12 +184,17 @@ func configure(host, username string) error {
 		return fmt.Errorf("host is required")
 	}
 
+	// Normalize the host (remove protocol if present)
+	normalizedHost := config.NormalizeHost(host)
+
 	if username == "" {
 		username = "admin"
 	}
 
+	// Display the HTTPS URL to the user
+	hostURL := config.FormatHostURL(normalizedHost)
 	fmt.Fprintf(os.Stderr, "To create an API token in Jenkins:\n")
-	fmt.Fprintf(os.Stderr, "1. Go to: %s/user/%s/configure\n", host, username)
+	fmt.Fprintf(os.Stderr, "1. Go to: %s/user/%s/configure\n", hostURL, username)
 	fmt.Fprintf(os.Stderr, "2. Click 'Add new Token' under API Token section\n")
 	fmt.Fprintf(os.Stderr, "3. Copy the generated token\n")
 	fmt.Fprintf(os.Stderr, "\nThe token will be stored securely in your system's keyring.\n")
@@ -201,17 +212,17 @@ func configure(host, username string) error {
 		return fmt.Errorf("token cannot be empty")
 	}
 
-	// Save host and username to config file
-	if err := config.SaveConfig(host, username); err != nil {
+	// Save host and username to config file (SaveConfig will normalize the host)
+	if err := config.SaveConfig(normalizedHost, username); err != nil {
 		return err
 	}
 
-	// Save token to keyring
-	if err := config.SaveToken(host, token); err != nil {
+	// Save token to keyring using normalized host
+	if err := config.SaveToken(normalizedHost, token); err != nil {
 		return err
 	}
 
-	fmt.Fprintf(os.Stderr, "Configuration saved successfully for host: %s (username: %s, override with JENKINS_USER env var)\n", host, username)
+	fmt.Fprintf(os.Stderr, "Configuration saved successfully for host: %s (username: %s, override with JENKINS_USER env var)\n", normalizedHost, username)
 	return nil
 }
 
