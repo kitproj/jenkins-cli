@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/bndr/gojenkins"
 	"github.com/kitproj/jenkins-cli/internal/config"
@@ -19,8 +20,8 @@ func runMCPServer(ctx context.Context) error {
 		return fmt.Errorf("Jenkins URL must be configured (use 'jenkins configure <url>' or set JENKINS_URL env var)")
 	}
 
-	// Normalize URL
-	url = config.NormalizeURL(url)
+	// Remove trailing slashes only
+	url = strings.TrimRight(url, "/")
 
 	// Load token from keyring
 	token, err := config.LoadToken(url)

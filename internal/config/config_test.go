@@ -5,70 +5,6 @@ import (
 "testing"
 )
 
-// TestNormalizeURL tests the URL normalization function
-func TestNormalizeURL(t *testing.T) {
-tests := []struct {
-name     string
-input    string
-expected string
-}{
-{
-name:     "URL without protocol",
-input:    "build.intuit.com",
-expected: "https://build.intuit.com",
-},
-{
-name:     "URL with https protocol",
-input:    "https://build.intuit.com",
-expected: "https://build.intuit.com",
-},
-{
-name:     "URL with http protocol",
-input:    "http://build.intuit.com",
-expected: "http://build.intuit.com",
-},
-{
-name:     "URL with trailing slash",
-input:    "https://build.intuit.com/",
-expected: "https://build.intuit.com",
-},
-{
-name:     "URL with path",
-input:    "https://build.intuit.com/jenkins",
-expected: "https://build.intuit.com/jenkins",
-},
-{
-name:     "URL with path and trailing slash",
-input:    "https://build.intuit.com/jenkins/",
-expected: "https://build.intuit.com/jenkins",
-},
-{
-name:     "localhost with port",
-input:    "localhost:8080",
-expected: "https://localhost:8080",
-},
-{
-name:     "localhost with protocol and port",
-input:    "http://localhost:8080",
-expected: "http://localhost:8080",
-},
-{
-name:     "URL without protocol with path",
-input:    "example.com/jenkins",
-expected: "https://example.com/jenkins",
-},
-}
-
-for _, tt := range tests {
-t.Run(tt.name, func(t *testing.T) {
-result := NormalizeURL(tt.input)
-if result != tt.expected {
-t.Errorf("NormalizeURL(%q) = %q, want %q", tt.input, result, tt.expected)
-}
-})
-}
-}
-
 // TestSaveLoadConfig tests basic save and load operations
 func TestSaveLoadConfig(t *testing.T) {
 // Create a temporary directory for testing
@@ -109,8 +45,8 @@ t.Errorf("Expected username %q, got %q", testUsername, retrievedUsername)
 }
 }
 
-// TestSaveConfigNormalizesURL tests that SaveConfig normalizes the URL
-func TestSaveConfigNormalizesURL(t *testing.T) {
+// TestSaveConfigRemovesTrailingSlash tests that SaveConfig removes trailing slashes
+func TestSaveConfigRemovesTrailingSlash(t *testing.T) {
 // Create a temporary directory for testing
 tmpDir := t.TempDir()
 
@@ -142,7 +78,7 @@ t.Fatalf("Failed to load config: %v", err)
 }
 
 if retrievedURL != expectedURL {
-t.Errorf("Expected normalized URL %q, got %q", expectedURL, retrievedURL)
+t.Errorf("Expected URL without trailing slash %q, got %q", expectedURL, retrievedURL)
 }
 }
 

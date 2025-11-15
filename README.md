@@ -67,7 +67,7 @@ The `jenkins` CLI can be configured in two ways:
    ```
    This stores the URL and username in `~/.config/jenkins-cli/config.json` and the token securely in your system's keyring.
    
-   **Note:** The URL should be a fully formed URL including the protocol (e.g., `https://jenkins.example.com` or `http://localhost:8080`). If your Jenkins instance is at a subpath, include it in the URL (e.g., `https://example.com/jenkins`). If you don't include a protocol, `https://` will be added automatically.
+   **Note:** The URL must be a fully formed URL including the protocol (e.g., `https://jenkins.example.com` or `http://localhost:8080`). If your Jenkins instance is at a subpath, include it in the URL (e.g., `https://example.com/jenkins`).
 
 2. **Using environment variables**:
    ```bash

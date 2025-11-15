@@ -21,20 +21,6 @@ type config struct {
 	Username string `json:"username,omitempty"`
 }
 
-// NormalizeURL ensures the URL has the https:// protocol and removes trailing slashes
-// Returns the normalized URL that should be stored and used for connections
-func NormalizeURL(url string) string {
-	// Remove trailing slashes
-	url = strings.TrimRight(url, "/")
-	
-	// If no protocol is specified, add https://
-	if !strings.HasPrefix(url, "http://") && !strings.HasPrefix(url, "https://") {
-		url = "https://" + url
-	}
-	
-	return url
-}
-
 // getConfigPath returns the path to the config file
 func getConfigPath() (string, error) {
 	configDirPath, err := os.UserConfigDir()
@@ -48,8 +34,8 @@ func getConfigPath() (string, error) {
 
 // SaveConfig saves the URL and username to the config file
 func SaveConfig(url, username string) error {
-	// Normalize URL to ensure it has protocol and no trailing slashes
-	url = NormalizeURL(url)
+	// Remove trailing slashes only
+	url = strings.TrimRight(url, "/")
 
 	configPath, err := getConfigPath()
 	if err != nil {

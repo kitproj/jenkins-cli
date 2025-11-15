@@ -135,9 +135,9 @@ func executeCommand(ctx context.Context, fn func(context.Context) error) error {
 		}
 	}
 
-	// Normalize URL from environment variable if needed
+	// Remove trailing slashes from URL if needed
 	if url != "" {
-		url = config.NormalizeURL(url)
+		url = strings.TrimRight(url, "/")
 	}
 
 	// Load token from keyring, or fall back to env var
@@ -183,8 +183,8 @@ func configure(jenkinsURL, username string) error {
 		return fmt.Errorf("Jenkins URL is required")
 	}
 
-	// Normalize the URL (ensure protocol and remove trailing slashes)
-	normalizedURL := config.NormalizeURL(jenkinsURL)
+	// Remove trailing slashes only - URL must be valid
+	jenkinsURL = strings.TrimRight(jenkinsURL, "/")
 
 	if username == "" {
 		username = "admin"
@@ -192,7 +192,7 @@ func configure(jenkinsURL, username string) error {
 
 	// Display the URL to the user
 	fmt.Fprintf(os.Stderr, "To create an API token in Jenkins:\n")
-	fmt.Fprintf(os.Stderr, "1. Go to: %s/user/%s/configure\n", normalizedURL, username)
+	fmt.Fprintf(os.Stderr, "1. Go to: %s/user/%s/configure\n", jenkinsURL, username)
 	fmt.Fprintf(os.Stderr, "2. Click 'Add new Token' under API Token section\n")
 	fmt.Fprintf(os.Stderr, "3. Copy the generated token\n")
 	fmt.Fprintf(os.Stderr, "\nThe token will be stored securely in your system's keyring.\n")
@@ -210,17 +210,17 @@ func configure(jenkinsURL, username string) error {
 		return fmt.Errorf("token cannot be empty")
 	}
 
-	// Save URL and username to config file (SaveConfig will normalize the URL)
-	if err := config.SaveConfig(normalizedURL, username); err != nil {
+	// Save URL and username to config file
+	if err := config.SaveConfig(jenkinsURL, username); err != nil {
 		return err
 	}
 
-	// Save token to keyring using normalized URL
-	if err := config.SaveToken(normalizedURL, token); err != nil {
+	// Save token to keyring
+	if err := config.SaveToken(jenkinsURL, token); err != nil {
 		return err
 	}
 
-	fmt.Fprintf(os.Stderr, "Configuration saved successfully for URL: %s (username: %s, override with JENKINS_USER env var)\n", normalizedURL, username)
+	fmt.Fprintf(os.Stderr, "Configuration saved successfully for URL: %s (username: %s, override with JENKINS_USER env var)\n", jenkinsURL, username)
 	return nil
 }
 
