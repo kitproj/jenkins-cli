@@ -169,6 +169,41 @@ jenkins get-job my-application-build
 # Last Success:        #42
 ```
 
+**Working with Inner Jobs (Folders and Multi-branch Pipelines):**
+
+Jenkins folders and multi-branch pipelines contain "inner jobs" - jobs nested within them. When you query a folder or multi-branch pipeline, the CLI will display these inner jobs:
+
+```bash
+jenkins get-job my-pipeline
+# Output:
+# Job Name:            my-pipeline
+# URL:                 https://jenkins.example.com/job/my-pipeline/
+# Description:         Multi-branch pipeline for my application
+# 
+# Inner Jobs (3):
+#   main                                   SUCCESS         https://jenkins.example.com/job/my-pipeline/job/main/
+#   develop                                SUCCESS         https://jenkins.example.com/job/my-pipeline/job/develop/
+#   feature-new-ui                         FAILURE         https://jenkins.example.com/job/my-pipeline/job/feature-new-ui/
+```
+
+To access an inner job directly, use the full path with `/job/` separators:
+
+```bash
+# Access a branch in a multi-branch pipeline
+jenkins get-job my-pipeline/job/develop
+jenkins build-job my-pipeline/job/develop
+jenkins get-last-build my-pipeline/job/develop
+
+# Access a job within a folder
+jenkins get-job my-folder/job/my-nested-job
+jenkins build-job my-folder/job/my-nested-job
+```
+
+The inner job names shown in the output can be used to construct the full job path by following this format:
+- **Multi-branch pipeline branch**: `<pipeline-name>/job/<branch-name>`
+- **Job in a folder**: `<folder-name>/job/<job-name>`
+- **Nested folders**: `<folder1>/job/<folder2>/job/<job-name>`
+
 **Trigger a build:**
 ```bash
 jenkins build-job my-application-build
