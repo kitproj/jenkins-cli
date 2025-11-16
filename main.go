@@ -407,7 +407,7 @@ func getStatusFromColor(color string) string {
 	if color == "" {
 		return "N/A"
 	}
-	
+
 	switch {
 	case strings.HasPrefix(color, "blue"):
 		return "SUCCESS"
