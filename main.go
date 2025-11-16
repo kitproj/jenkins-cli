@@ -403,6 +403,11 @@ func printField(key string, value interface{}) {
 
 // getStatusFromColor converts Jenkins color to status
 func getStatusFromColor(color string) string {
+	// Handle empty color (non-buildable jobs like folders, or jobs never built)
+	if color == "" {
+		return "N/A"
+	}
+	
 	switch {
 	case strings.HasPrefix(color, "blue"):
 		return "SUCCESS"
