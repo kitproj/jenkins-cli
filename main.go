@@ -246,7 +246,10 @@ func getJob(ctx context.Context, jobName string) error {
 
 	printField("Job Name", job.GetName())
 	printField("URL", job.Raw.URL)
-	printField("Status", getStatusFromColor(job.Raw.Color))
+	// Only show status for buildable jobs
+	if job.Raw.Buildable {
+		printField("Status", getStatusFromColor(job.Raw.Color))
+	}
 	if job.GetDescription() != "" {
 		printField("Description", job.GetDescription())
 	}
