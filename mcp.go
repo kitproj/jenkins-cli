@@ -185,6 +185,16 @@ func getJobHandler(ctx context.Context, client *gojenkins.Jenkins, request mcp.C
 		result += fmt.Sprintf("\nLast Failed: #%d", lastFailed.GetBuildNumber())
 	}
 
+	// Add inner jobs if they exist (for folders and multi-branch pipelines)
+	innerJobs := job.GetInnerJobsMetadata()
+	if len(innerJobs) > 0 {
+		result += fmt.Sprintf("\n\nInner Jobs (%d):", len(innerJobs))
+		for _, innerJob := range innerJobs {
+			status := getStatusFromColor(innerJob.Color)
+			result += fmt.Sprintf("\n  %-38s %-15s %s", innerJob.Name, status, innerJob.Url)
+		}
+	}
+
 	return mcp.NewToolResultText(result), nil
 }
 

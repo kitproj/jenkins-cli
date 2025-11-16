@@ -250,20 +250,30 @@ func getJob(ctx context.Context, jobName string) error {
 	if job.GetDescription() != "" {
 		printField("Description", job.GetDescription())
 	}
-	
+
 	lastBuild, err := job.GetLastBuild(ctx)
 	if err == nil && lastBuild != nil {
 		printField("Last Build", fmt.Sprintf("#%d - %s", lastBuild.GetBuildNumber(), lastBuild.GetResult()))
 	}
-	
+
 	lastSuccess, err := job.GetLastSuccessfulBuild(ctx)
 	if err == nil && lastSuccess != nil {
 		printField("Last Success", fmt.Sprintf("#%d", lastSuccess.GetBuildNumber()))
 	}
-	
+
 	lastFailed, err := job.GetLastFailedBuild(ctx)
 	if err == nil && lastFailed != nil {
 		printField("Last Failed", fmt.Sprintf("#%d", lastFailed.GetBuildNumber()))
+	}
+
+	// Print inner jobs if they exist (for folders and multi-branch pipelines)
+	innerJobs := job.GetInnerJobsMetadata()
+	if len(innerJobs) > 0 {
+		fmt.Printf("\nInner Jobs (%d):\n", len(innerJobs))
+		for _, innerJob := range innerJobs {
+			status := getStatusFromColor(innerJob.Color)
+			fmt.Printf("  %-38s %-15s %s\n", innerJob.Name, status, innerJob.Url)
+		}
 	}
 
 	return nil
