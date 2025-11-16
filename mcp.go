@@ -131,7 +131,7 @@ func runMCPServer(ctx context.Context) error {
 }
 
 func listJobsHandler(ctx context.Context, client *gojenkins.Jenkins, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	jobs, err := client.GetAllJobs(ctx)
+	jobs, err := client.GetAllJobNames(ctx)
 	if err != nil {
 		return mcp.NewToolResultError(fmt.Sprintf("Failed to list jobs: %v", err)), nil
 	}
@@ -142,8 +142,8 @@ func listJobsHandler(ctx context.Context, client *gojenkins.Jenkins, request mcp
 
 	result := fmt.Sprintf("Found %d job(s):\n\n", len(jobs))
 	for _, job := range jobs {
-		status := getStatusFromColor(job.Raw.Color)
-		result += fmt.Sprintf("%-40s %-15s %s\n", job.GetName(), status, job.Raw.URL)
+		status := getStatusFromColor(job.Color)
+		result += fmt.Sprintf("%-40s %-15s %s\n", job.Name, status, job.Url)
 	}
 
 	return mcp.NewToolResultText(result), nil
