@@ -35,3 +35,56 @@ func TestGetStatusFromColor(t *testing.T) {
 		})
 	}
 }
+
+// TestParseJobPath tests the job path parsing function
+func TestParseJobPath(t *testing.T) {
+	tests := []struct {
+		name           string
+		jobPath        string
+		expectedJob    string
+		expectedParents []string
+	}{
+		{
+			name:           "simple job name",
+			jobPath:        "simple-job",
+			expectedJob:    "simple-job",
+			expectedParents: nil,
+		},
+		{
+			name:           "nested job with one parent",
+			jobPath:        "folder1/job/my-job",
+			expectedJob:    "my-job",
+			expectedParents: []string{"folder1"},
+		},
+		{
+			name:           "nested job with multiple parents",
+			jobPath:        "cloud-workspaces/job/cws-api/job/cws-api-a/job/master",
+			expectedJob:    "master",
+			expectedParents: []string{"cloud-workspaces", "cws-api", "cws-api-a"},
+		},
+		{
+			name:           "two level nesting",
+			jobPath:        "folder1/job/folder2/job/my-job",
+			expectedJob:    "my-job",
+			expectedParents: []string{"folder1", "folder2"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			job, parents := parseJobPath(tt.jobPath)
+			if job != tt.expectedJob {
+				t.Errorf("parseJobPath(%q) job = %q, want %q", tt.jobPath, job, tt.expectedJob)
+			}
+			if len(parents) != len(tt.expectedParents) {
+				t.Errorf("parseJobPath(%q) parents length = %d, want %d", tt.jobPath, len(parents), len(tt.expectedParents))
+				return
+			}
+			for i, parent := range parents {
+				if parent != tt.expectedParents[i] {
+					t.Errorf("parseJobPath(%q) parents[%d] = %q, want %q", tt.jobPath, i, parent, tt.expectedParents[i])
+				}
+			}
+		})
+	}
+}

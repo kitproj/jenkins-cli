@@ -239,7 +239,9 @@ func listJobs(ctx context.Context) error {
 
 // getJob gets details of a specific job
 func getJob(ctx context.Context, jobName string) error {
-	job, err := jenkins.GetJob(ctx, jobName)
+	// Parse the job path to handle nested folders
+	name, parents := parseJobPath(jobName)
+	job, err := jenkins.GetJob(ctx, name, parents...)
 	if err != nil {
 		return fmt.Errorf("failed to get job: %w", err)
 	}
@@ -285,7 +287,9 @@ func getJob(ctx context.Context, jobName string) error {
 
 // buildJob triggers a build for a job
 func buildJob(ctx context.Context, jobName string) error {
-	job, err := jenkins.GetJob(ctx, jobName)
+	// Parse the job path to handle nested folders
+	name, parents := parseJobPath(jobName)
+	job, err := jenkins.GetJob(ctx, name, parents...)
 	if err != nil {
 		return fmt.Errorf("failed to get job: %w", err)
 	}
@@ -301,7 +305,9 @@ func buildJob(ctx context.Context, jobName string) error {
 
 // getBuild gets details of a specific build
 func getBuild(ctx context.Context, jobName, buildNumber string) error {
-	job, err := jenkins.GetJob(ctx, jobName)
+	// Parse the job path to handle nested folders
+	name, parents := parseJobPath(jobName)
+	job, err := jenkins.GetJob(ctx, name, parents...)
 	if err != nil {
 		return fmt.Errorf("failed to get job: %w", err)
 	}
@@ -322,7 +328,9 @@ func getBuild(ctx context.Context, jobName, buildNumber string) error {
 
 // getBuildLog gets the console output of a build
 func getBuildLog(ctx context.Context, jobName, buildNumber string) error {
-	job, err := jenkins.GetJob(ctx, jobName)
+	// Parse the job path to handle nested folders
+	name, parents := parseJobPath(jobName)
+	job, err := jenkins.GetJob(ctx, name, parents...)
 	if err != nil {
 		return fmt.Errorf("failed to get job: %w", err)
 	}
@@ -344,7 +352,9 @@ func getBuildLog(ctx context.Context, jobName, buildNumber string) error {
 
 // getLastBuild gets details of the last build of a job
 func getLastBuild(ctx context.Context, jobName string) error {
-	job, err := jenkins.GetJob(ctx, jobName)
+	// Parse the job path to handle nested folders
+	name, parents := parseJobPath(jobName)
+	job, err := jenkins.GetJob(ctx, name, parents...)
 	if err != nil {
 		return fmt.Errorf("failed to get job: %w", err)
 	}
@@ -359,6 +369,28 @@ func getLastBuild(ctx context.Context, jobName string) error {
 }
 
 // Helper functions
+
+// parseJobPath parses a Jenkins job path and returns the job name and parent IDs.
+// Jenkins uses "/job/" as a separator in URLs for nested folders.
+// Example: "cloud-workspaces/job/cws-api/job/cws-api-a/job/master"
+// Returns: jobName="master", parents=["cloud-workspaces", "cws-api", "cws-api-a"]
+func parseJobPath(jobPath string) (string, []string) {
+	// Split by "/job/" to get the parts
+	parts := strings.Split(jobPath, "/job/")
+
+	if len(parts) == 1 {
+		// No "/job/" separator, it's a simple job name
+		return jobPath, nil
+	}
+
+	// The last part is the job name
+	jobName := parts[len(parts)-1]
+
+	// Everything else are parent folders
+	parents := parts[:len(parts)-1]
+
+	return jobName, parents
+}
 
 func parseBuildNumber(buildNumber string) (int64, error) {
 	var num int64

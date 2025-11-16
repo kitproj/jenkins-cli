@@ -155,7 +155,9 @@ func getJobHandler(ctx context.Context, client *gojenkins.Jenkins, request mcp.C
 		return mcp.NewToolResultError(fmt.Sprintf("Missing or invalid 'job_name' argument: %v", err)), nil
 	}
 
-	job, err := client.GetJob(ctx, jobName)
+	// Parse the job path to handle nested folders
+	name, parents := parseJobPath(jobName)
+	job, err := client.GetJob(ctx, name, parents...)
 	if err != nil {
 		return mcp.NewToolResultError(fmt.Sprintf("Failed to get job: %v", err)), nil
 	}
@@ -209,7 +211,9 @@ func buildJobHandler(ctx context.Context, client *gojenkins.Jenkins, request mcp
 		return mcp.NewToolResultError(fmt.Sprintf("Missing or invalid 'job_name' argument: %v", err)), nil
 	}
 
-	job, err := client.GetJob(ctx, jobName)
+	// Parse the job path to handle nested folders
+	name, parents := parseJobPath(jobName)
+	job, err := client.GetJob(ctx, name, parents...)
 	if err != nil {
 		return mcp.NewToolResultError(fmt.Sprintf("Failed to get job: %v", err)), nil
 	}
@@ -238,7 +242,9 @@ func getBuildHandler(ctx context.Context, client *gojenkins.Jenkins, request mcp
 		return mcp.NewToolResultError(fmt.Sprintf("Invalid build number: %s", buildNumberStr)), nil
 	}
 
-	job, err := client.GetJob(ctx, jobName)
+	// Parse the job path to handle nested folders
+	name, parents := parseJobPath(jobName)
+	job, err := client.GetJob(ctx, name, parents...)
 	if err != nil {
 		return mcp.NewToolResultError(fmt.Sprintf("Failed to get job: %v", err)), nil
 	}
@@ -292,7 +298,9 @@ func getBuildLogHandler(ctx context.Context, client *gojenkins.Jenkins, request 
 		return mcp.NewToolResultError(fmt.Sprintf("Invalid build number: %s", buildNumberStr)), nil
 	}
 
-	job, err := client.GetJob(ctx, jobName)
+	// Parse the job path to handle nested folders
+	name, parents := parseJobPath(jobName)
+	job, err := client.GetJob(ctx, name, parents...)
 	if err != nil {
 		return mcp.NewToolResultError(fmt.Sprintf("Failed to get job: %v", err)), nil
 	}
@@ -312,7 +320,9 @@ func getLastBuildHandler(ctx context.Context, client *gojenkins.Jenkins, request
 		return mcp.NewToolResultError(fmt.Sprintf("Missing or invalid 'job_name' argument: %v", err)), nil
 	}
 
-	job, err := client.GetJob(ctx, jobName)
+	// Parse the job path to handle nested folders
+	name, parents := parseJobPath(jobName)
+	job, err := client.GetJob(ctx, name, parents...)
 	if err != nil {
 		return mcp.NewToolResultError(fmt.Sprintf("Failed to get job: %v", err)), nil
 	}
