@@ -284,6 +284,26 @@ Example MCP client configuration:
 - Report issues: https://github.com/kitproj/jenkins-cli/issues
 - Check existing issues for solutions and workarounds
 
+## For Developers
+
+### Releasing a New Version
+
+When you push a new tag (e.g., `v0.0.3`), the GitHub Actions release workflow will automatically:
+
+1. Update all version references in this README.md
+2. Commit the updated README back to the main branch
+3. Build binaries for all supported platforms
+4. Create a GitHub release with the built binaries and checksums
+
+To create a new release:
+
+```bash
+git tag v0.0.3
+git push origin v0.0.3
+```
+
+The README will be automatically updated with the new version number in all installation instructions.
+
 ## License
 
 See [LICENSE](LICENSE) file for details.
