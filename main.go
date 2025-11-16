@@ -386,7 +386,7 @@ func printBuildDetails(ctx context.Context, build *gojenkins.Build) {
 	}
 	duration := build.GetDuration()
 	if duration > 0 {
-		printField("Duration", fmt.Sprintf("%.0fs", duration/1000))
+		printField("Duration", formatDuration(duration))
 	}
 }
 
@@ -403,6 +403,29 @@ func printField(key string, value interface{}) {
 			fmt.Printf("%-20s %s\n", "", line)
 		}
 	}
+}
+
+// formatDuration converts milliseconds to a human-readable duration string
+// Returns the largest unit that makes sense: N days, N hours, N minutes, or N seconds
+func formatDuration(milliseconds float64) string {
+	seconds := int64(milliseconds / 1000)
+	
+	if seconds < 60 {
+		return fmt.Sprintf("%d seconds", seconds)
+	}
+	
+	minutes := seconds / 60
+	if minutes < 60 {
+		return fmt.Sprintf("%d minutes", minutes)
+	}
+	
+	hours := minutes / 60
+	if hours < 24 {
+		return fmt.Sprintf("%d hours", hours)
+	}
+	
+	days := hours / 24
+	return fmt.Sprintf("%d days", days)
 }
 
 // getStatusFromColor converts Jenkins color to status
