@@ -10,7 +10,7 @@ func TestGetStatusFromColor(t *testing.T) {
 		color    string
 		expected string
 	}{
-		{"", "N/A"}, // Empty color for non-buildable jobs
+		{"", ""}, // Empty color for non-buildable jobs
 		{"blue", "SUCCESS"},
 		{"blue_anime", "SUCCESS"},
 		{"red", "FAILURE"},

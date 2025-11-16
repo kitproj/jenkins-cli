@@ -165,9 +165,10 @@ func getJobHandler(ctx context.Context, client *gojenkins.Jenkins, request mcp.C
 		job.Raw.URL,
 	)
 
-	// Only show status for buildable jobs
-	if job.Raw.Buildable {
-		result += fmt.Sprintf("\nStatus: %s", getStatusFromColor(job.Raw.Color))
+	// Only show status if it's not empty
+	status := getStatusFromColor(job.Raw.Color)
+	if status != "" {
+		result += fmt.Sprintf("\nStatus: %s", status)
 	}
 
 	if job.GetDescription() != "" {
