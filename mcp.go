@@ -160,11 +160,16 @@ func getJobHandler(ctx context.Context, client *gojenkins.Jenkins, request mcp.C
 		return mcp.NewToolResultError(fmt.Sprintf("Failed to get job: %v", err)), nil
 	}
 
-	result := fmt.Sprintf("Job Name: %s\nURL: %s\nStatus: %s",
+	result := fmt.Sprintf("Job Name: %s\nURL: %s",
 		job.GetName(),
 		job.Raw.URL,
-		getStatusFromColor(job.Raw.Color),
 	)
+
+	// Only show status if it's not empty
+	status := getStatusFromColor(job.Raw.Color)
+	if status != "" {
+		result += fmt.Sprintf("\nStatus: %s", status)
+	}
 
 	if job.GetDescription() != "" {
 		result += fmt.Sprintf("\nDescription: %s", job.GetDescription())

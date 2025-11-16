@@ -246,7 +246,11 @@ func getJob(ctx context.Context, jobName string) error {
 
 	printField("Job Name", job.GetName())
 	printField("URL", job.Raw.URL)
-	printField("Status", getStatusFromColor(job.Raw.Color))
+	// Only show status if it's not empty
+	status := getStatusFromColor(job.Raw.Color)
+	if status != "" {
+		printField("Status", status)
+	}
 	if job.GetDescription() != "" {
 		printField("Description", job.GetDescription())
 	}
@@ -403,6 +407,11 @@ func printField(key string, value interface{}) {
 
 // getStatusFromColor converts Jenkins color to status
 func getStatusFromColor(color string) string {
+	// Return empty string for empty color (non-buildable jobs like folders, or jobs never built)
+	if color == "" {
+		return ""
+	}
+
 	switch {
 	case strings.HasPrefix(color, "blue"):
 		return "SUCCESS"
