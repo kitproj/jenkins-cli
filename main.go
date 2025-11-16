@@ -218,7 +218,7 @@ func configure(jenkinsURL, username string) error {
 
 // listJobs lists all Jenkins jobs
 func listJobs(ctx context.Context) error {
-	jobs, err := jenkins.GetAllJobs(ctx)
+	jobs, err := jenkins.GetAllJobNames(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to list jobs: %w", err)
 	}
@@ -230,8 +230,8 @@ func listJobs(ctx context.Context) error {
 
 	fmt.Printf("Found %d job(s):\n\n", len(jobs))
 	for _, job := range jobs {
-		status := getStatusFromColor(job.Raw.Color)
-		fmt.Printf("%-40s %-15s %s\n", job.GetName(), status, job.Raw.URL)
+		status := getStatusFromColor(job.Color)
+		fmt.Printf("%-40s %-15s %s\n", job.Name, status, job.Url)
 	}
 
 	return nil
