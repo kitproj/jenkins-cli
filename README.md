@@ -62,26 +62,6 @@ After installing, verify the installation works:
 jenkins -h
 ```
 
-### Build from Source
-
-```bash
-git clone https://github.com/kitproj/jenkins-cli.git
-cd jenkins-cli
-go build -o jenkins .
-```
-
-Then move the binary to your PATH:
-
-```bash
-# Linux/macOS
-sudo mv jenkins /usr/local/bin/
-
-# Or just add to your local bin
-mkdir -p ~/bin
-mv jenkins ~/bin/
-export PATH="$HOME/bin:$PATH"
-```
-
 ## Configuration
 
 ### Getting a Jenkins API Token
