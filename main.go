@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	neturl "net/url"
 	"os"
 	"os/signal"
 	"strings"
@@ -394,17 +395,41 @@ func parseJobPath(jobPath string) (string, []string) {
 	return jobName, parents
 }
 
-// getBuildSafe gets a build using the job's Base path to avoid trailing slash issues.
-// This works around a potential issue in gojenkins where j.Raw.URL might have a trailing slash
-// which would cause double slashes in the build URL path.
+// getBuildSafe gets a build using a properly constructed path.
+// This works around issues in gojenkins where:
+// 1. j.Raw.URL might have a trailing slash causing double slashes
+// 2. The Requester adds its base path, so we need to avoid duplication
 func getBuildSafe(ctx context.Context, job *gojenkins.Job, buildNumber int64) (*gojenkins.Build, error) {
-	// Construct the build using job.Base instead of job.Raw.URL to avoid trailing slash issues
+	// Parse the job URL to get the path (like original GetBuild does)
+	parsedURL, err := neturl.Parse(job.Raw.URL)
+	if err != nil {
+		return nil, err
+	}
+	jobPath := parsedURL.Path
+	
+	// Remove trailing slash to avoid double slashes when appending build number
+	jobPath = strings.TrimSuffix(jobPath, "/")
+	
+	// The jobPath includes the Requester's base (e.g., /devx-shared-2/job/...)
+	// But the Requester will add its base again when making requests
+	// So we need to strip it to avoid duplication
+	if job.Jenkins != nil && job.Jenkins.Requester != nil {
+		requesterBase := job.Jenkins.Requester.Base
+		if requesterBase != "" && strings.HasPrefix(jobPath, requesterBase) {
+			// Remove the requester base from the beginning
+			jobPath = strings.TrimPrefix(jobPath, requesterBase)
+		}
+	}
+	
+	// Construct the build path
+	buildPath := fmt.Sprintf("%s/%d", jobPath, buildNumber)
+	
 	build := &gojenkins.Build{
 		Jenkins: job.Jenkins,
 		Job:     job,
 		Raw:     new(gojenkins.BuildResponse),
 		Depth:   1,
-		Base:    fmt.Sprintf("%s/%d", job.Base, buildNumber),
+		Base:    buildPath,
 	}
 	
 	status, err := build.Poll(ctx)
