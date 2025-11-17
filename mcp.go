@@ -249,7 +249,8 @@ func getBuildHandler(ctx context.Context, client *gojenkins.Jenkins, request mcp
 		return mcp.NewToolResultError(fmt.Sprintf("Failed to get job: %v", err)), nil
 	}
 
-	build, err := job.GetBuild(ctx, buildNumber)
+	// Use getBuildSafe instead of job.GetBuild to avoid trailing slash issues
+	build, err := getBuildSafe(ctx, job, buildNumber)
 	if err != nil {
 		return mcp.NewToolResultError(fmt.Sprintf("Failed to get build: %v", err)), nil
 	}
@@ -305,7 +306,8 @@ func getBuildLogHandler(ctx context.Context, client *gojenkins.Jenkins, request 
 		return mcp.NewToolResultError(fmt.Sprintf("Failed to get job: %v", err)), nil
 	}
 
-	build, err := job.GetBuild(ctx, buildNumber)
+	// Use getBuildSafe instead of job.GetBuild to avoid trailing slash issues
+	build, err := getBuildSafe(ctx, job, buildNumber)
 	if err != nil {
 		return mcp.NewToolResultError(fmt.Sprintf("Failed to get build: %v", err)), nil
 	}

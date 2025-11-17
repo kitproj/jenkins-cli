@@ -317,7 +317,8 @@ func getBuild(ctx context.Context, jobName, buildNumber string) error {
 		return err
 	}
 
-	build, err := job.GetBuild(ctx, buildNum)
+	// Use getBuildSafe instead of job.GetBuild to avoid trailing slash issues
+	build, err := getBuildSafe(ctx, job, buildNum)
 	if err != nil {
 		return fmt.Errorf("failed to get build: %w", err)
 	}
@@ -340,7 +341,8 @@ func getBuildLog(ctx context.Context, jobName, buildNumber string) error {
 		return err
 	}
 
-	build, err := job.GetBuild(ctx, buildNum)
+	// Use getBuildSafe instead of job.GetBuild to avoid trailing slash issues
+	build, err := getBuildSafe(ctx, job, buildNum)
 	if err != nil {
 		return fmt.Errorf("failed to get build: %w", err)
 	}
@@ -390,6 +392,29 @@ func parseJobPath(jobPath string) (string, []string) {
 	parents := parts[:len(parts)-1]
 
 	return jobName, parents
+}
+
+// getBuildSafe gets a build using the job's Base path to avoid trailing slash issues.
+// This works around a potential issue in gojenkins where j.Raw.URL might have a trailing slash
+// which would cause double slashes in the build URL path.
+func getBuildSafe(ctx context.Context, job *gojenkins.Job, buildNumber int64) (*gojenkins.Build, error) {
+	// Construct the build using job.Base instead of job.Raw.URL to avoid trailing slash issues
+	build := &gojenkins.Build{
+		Jenkins: job.Jenkins,
+		Job:     job,
+		Raw:     new(gojenkins.BuildResponse),
+		Depth:   1,
+		Base:    fmt.Sprintf("%s/%d", job.Base, buildNumber),
+	}
+	
+	status, err := build.Poll(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if status == 200 {
+		return build, nil
+	}
+	return nil, fmt.Errorf("failed to get build: status %d", status)
 }
 
 func parseBuildNumber(buildNumber string) (int64, error) {
