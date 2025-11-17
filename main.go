@@ -418,7 +418,7 @@ func printBuildDetails(ctx context.Context, build *gojenkins.Build) {
 	}
 	duration := build.GetDuration()
 	if duration > 0 {
-		printField("Duration", fmt.Sprintf("%.0fs", duration/1000))
+		printField("Duration", formatDuration(duration))
 	}
 }
 
