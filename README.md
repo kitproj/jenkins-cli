@@ -62,26 +62,6 @@ After installing, verify the installation works:
 jenkins -h
 ```
 
-### Build from Source
-
-```bash
-git clone https://github.com/kitproj/jenkins-cli.git
-cd jenkins-cli
-go build -o jenkins .
-```
-
-Then move the binary to your PATH:
-
-```bash
-# Linux/macOS
-sudo mv jenkins /usr/local/bin/
-
-# Or just add to your local bin
-mkdir -p ~/bin
-mv jenkins ~/bin/
-export PATH="$HOME/bin:$PATH"
-```
-
 ## Configuration
 
 ### Getting a Jenkins API Token
@@ -168,6 +148,41 @@ jenkins get-job my-application-build
 # Last Build:          #42 - SUCCESS
 # Last Success:        #42
 ```
+
+**Working with Inner Jobs (Folders and Multi-branch Pipelines):**
+
+Jenkins folders and multi-branch pipelines contain "inner jobs" - jobs nested within them. When you query a folder or multi-branch pipeline, the CLI will display these inner jobs:
+
+```bash
+jenkins get-job my-pipeline
+# Output:
+# Job Name:            my-pipeline
+# URL:                 https://jenkins.example.com/job/my-pipeline/
+# Description:         Multi-branch pipeline for my application
+# 
+# Inner Jobs (3):
+#   main                                   SUCCESS         https://jenkins.example.com/job/my-pipeline/job/main/
+#   develop                                SUCCESS         https://jenkins.example.com/job/my-pipeline/job/develop/
+#   feature-new-ui                         FAILURE         https://jenkins.example.com/job/my-pipeline/job/feature-new-ui/
+```
+
+To access an inner job directly, use the full path with `/job/` separators:
+
+```bash
+# Access a branch in a multi-branch pipeline
+jenkins get-job my-pipeline/job/develop
+jenkins build-job my-pipeline/job/develop
+jenkins get-last-build my-pipeline/job/develop
+
+# Access a job within a folder
+jenkins get-job my-folder/job/my-nested-job
+jenkins build-job my-folder/job/my-nested-job
+```
+
+The inner job names shown in the output can be used to construct the full job path by following this format:
+- **Multi-branch pipeline branch**: `<pipeline-name>/job/<branch-name>`
+- **Job in a folder**: `<folder-name>/job/<job-name>`
+- **Nested folders**: `<folder1>/job/<folder2>/job/<job-name>`
 
 **Trigger a build:**
 ```bash
@@ -268,6 +283,26 @@ Example MCP client configuration:
 
 - Report issues: https://github.com/kitproj/jenkins-cli/issues
 - Check existing issues for solutions and workarounds
+
+## For Developers
+
+### Releasing a New Version
+
+When you push a new tag (e.g., `v0.0.3`), the GitHub Actions release workflow will automatically:
+
+1. Update all version references in this README.md
+2. Commit the updated README back to the main branch
+3. Build binaries for all supported platforms
+4. Create a GitHub release with the built binaries and checksums
+
+To create a new release:
+
+```bash
+git tag v0.0.3
+git push origin v0.0.3
+```
+
+The README will be automatically updated with the new version number in all installation instructions.
 
 ## License
 
