@@ -102,18 +102,6 @@ func runMCPServer(ctx context.Context) error {
 		return getBuildLogHandler(ctx, jenkinsClient, request)
 	})
 
-	// Add get-last-build tool
-	getLastBuildTool := mcp.NewTool("get_last_build",
-		mcp.WithDescription("Get details of the last build of a Jenkins job"),
-		mcp.WithString("job_name",
-			mcp.Required(),
-			mcp.Description("Jenkins job name"),
-		),
-	)
-	s.AddTool(getLastBuildTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		return getLastBuildHandler(ctx, jenkinsClient, request)
-	})
-
 	// Start the stdio server
 	return server.ServeStdio(s)
 }
@@ -273,48 +261,4 @@ func getBuildLogHandler(ctx context.Context, client *gojenkins.Jenkins, request 
 
 	log := build.GetConsoleOutput(ctx)
 	return mcp.NewToolResultText(log), nil
-}
-
-func getLastBuildHandler(ctx context.Context, client *gojenkins.Jenkins, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	jobName, err := request.RequireString("job_name")
-	if err != nil {
-		return mcp.NewToolResultError(fmt.Sprintf("Missing or invalid 'job_name' argument: %v", err)), nil
-	}
-
-	job, err := client.GetJob(ctx, jobName)
-	if err != nil {
-		return mcp.NewToolResultError(fmt.Sprintf("Failed to get job: %v", err)), nil
-	}
-
-	build, err := job.GetLastBuild(ctx)
-	if err != nil {
-		return mcp.NewToolResultError(fmt.Sprintf("Failed to get last build: %v", err)), nil
-	}
-
-	status := build.GetResult()
-	if build.IsRunning(ctx) {
-		status = "BUILDING"
-	}
-
-	result := fmt.Sprintf("Build Number: %d\nURL: %s\nStatus: %s",
-		build.GetBuildNumber(),
-		build.GetUrl(),
-		status,
-	)
-
-	if build.Raw.Description != "" {
-		result += fmt.Sprintf("\nDescription: %s", build.Raw.Description)
-	}
-
-	buildTime := build.GetTimestamp()
-	if !buildTime.IsZero() {
-		result += fmt.Sprintf("\nStarted: %s", buildTime.Format("2006-01-02 15:04:05"))
-	}
-
-	duration := build.GetDuration()
-	if duration > 0 {
-		result += fmt.Sprintf("\nDuration: %s", formatDuration(duration))
-	}
-
-	return mcp.NewToolResultText(result), nil
 }
