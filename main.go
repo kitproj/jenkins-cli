@@ -36,7 +36,6 @@ func main() {
 		fmt.Fprintln(w, "  jenkins build-job <job-name> - Trigger a build for a job")
 		fmt.Fprintln(w, "  jenkins get-build <job-name> <build-number> - Get details of a specific build")
 		fmt.Fprintln(w, "  jenkins get-build-log <job-name> <build-number> - Get the console output of a build")
-		fmt.Fprintln(w, "  jenkins get-last-build <job-name> - Get details of the last build")
 		fmt.Fprintln(w, "  jenkins mcp-server - Start MCP server (Model Context Protocol)")
 		fmt.Fprintln(w)
 		fmt.Fprintln(w, "Options:")
@@ -104,14 +103,6 @@ func run(ctx context.Context, args []string) error {
 		buildNumber := args[2]
 		return executeCommand(ctx, func(ctx context.Context) error {
 			return getBuildLog(ctx, jobName, buildNumber)
-		})
-	case "get-last-build":
-		if len(args) < 2 {
-			return fmt.Errorf("usage: jenkins get-last-build <job-name>")
-		}
-		jobName := args[1]
-		return executeCommand(ctx, func(ctx context.Context) error {
-			return getLastBuild(ctx, jobName)
 		})
 	case "mcp-server":
 		return runMCPServer(ctx)
@@ -339,22 +330,6 @@ func getBuildLog(ctx context.Context, jobName, buildNumber string) error {
 
 	log := build.GetConsoleOutput(ctx)
 	fmt.Print(log)
-	return nil
-}
-
-// getLastBuild gets details of the last build of a job
-func getLastBuild(ctx context.Context, jobName string) error {
-	job, err := jenkins.GetJob(ctx, jobName)
-	if err != nil {
-		return fmt.Errorf("failed to get job: %w", err)
-	}
-
-	build, err := job.GetLastBuild(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to get last build: %w", err)
-	}
-
-	printBuildDetails(ctx, build)
 	return nil
 }
 

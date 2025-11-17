@@ -108,7 +108,6 @@ Usage:
   jenkins build-job <job-name> - Trigger a build for a job
   jenkins get-build <job-name> <build-number> - Get details of a specific build
   jenkins get-build-log <job-name> <build-number> - Get the console output of a build
-  jenkins get-last-build <job-name> - Get details of the last build
   jenkins mcp-server - Start MCP server (Model Context Protocol)
 ```
 
@@ -172,7 +171,6 @@ To access an inner job directly, use the full path with `/job/` separators:
 # Access a branch in a multi-branch pipeline
 jenkins get-job my-pipeline/job/develop
 jenkins build-job my-pipeline/job/develop
-jenkins get-last-build my-pipeline/job/develop
 
 # Access a job within a folder
 jenkins get-job my-folder/job/my-nested-job
@@ -202,12 +200,6 @@ jenkins get-build my-application-build 42
 # Duration:            135s
 ```
 
-**Get the last build:**
-```bash
-jenkins get-last-build my-application-build
-# Shows details of the most recent build
-```
-
 **View build logs:**
 ```bash
 jenkins get-build-log my-application-build 42
@@ -231,7 +223,6 @@ The MCP server communicates over standard input/output (stdio) and provides the 
 - **build_job** - Trigger a build for a Jenkins job
 - **get_build** - Get details of a specific build including status, duration, and timestamp
 - **get_build_log** - Get the console output of a specific build
-- **get_last_build** - Get details of the last build of a Jenkins job
 
 ### MCP Server Configuration
 
