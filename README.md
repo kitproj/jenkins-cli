@@ -11,7 +11,7 @@ Like `jq`, it is designed to be a single, lightweight binary without the overhea
 - 🔐 **Secure credential storage** - Uses system keyring for API tokens
 - 📦 **Single binary** - No dependencies, just download and run
 - 🚀 **Simple commands** - Intuitive command structure
-- 🔧 **Jenkins operations** - List jobs, trigger builds, get build status, view logs
+- 🔧 **Jenkins operations** - List jobs, get build status, view logs
 - 🤖 **MCP Server** - Model Context Protocol server for AI agent integration
 
 ## Installation
@@ -105,7 +105,6 @@ Usage:
   jenkins configure <url> [username] - Configure Jenkins URL and API token (reads token from stdin)
   jenkins list-jobs - List all Jenkins jobs
   jenkins get-job <job-name> - Get details of a specific job
-  jenkins build-job <job-name> - Trigger a build for a job
   jenkins get-build <job-name> <build-number> - Get details of a specific build
   jenkins get-build-log <job-name> <build-number> - Get the console output of a build
   jenkins get-last-build <job-name> - Get details of the last build
@@ -171,25 +170,16 @@ To access an inner job directly, use the full path with `/job/` separators:
 ```bash
 # Access a branch in a multi-branch pipeline
 jenkins get-job my-pipeline/job/develop
-jenkins build-job my-pipeline/job/develop
 jenkins get-last-build my-pipeline/job/develop
 
 # Access a job within a folder
 jenkins get-job my-folder/job/my-nested-job
-jenkins build-job my-folder/job/my-nested-job
 ```
 
 The inner job names shown in the output can be used to construct the full job path by following this format:
 - **Multi-branch pipeline branch**: `<pipeline-name>/job/<branch-name>`
 - **Job in a folder**: `<folder-name>/job/<job-name>`
 - **Nested folders**: `<folder1>/job/<folder2>/job/<job-name>`
-
-**Trigger a build:**
-```bash
-jenkins build-job my-application-build
-# Output:
-# Successfully triggered build for job: my-application-build
-```
 
 **Get build details:**
 ```bash
@@ -228,7 +218,6 @@ The MCP server communicates over standard input/output (stdio) and provides the 
 
 - **list_jobs** - List all Jenkins jobs with their status and URL
 - **get_job** - Get details of a specific Jenkins job including status, description, and build history
-- **build_job** - Trigger a build for a Jenkins job
 - **get_build** - Get details of a specific build including status, duration, and timestamp
 - **get_build_log** - Get the console output of a specific build
 - **get_last_build** - Get details of the last build of a Jenkins job

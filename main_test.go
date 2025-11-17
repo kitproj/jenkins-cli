@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+	"strings"
 	"testing"
 )
 
@@ -33,5 +35,19 @@ func TestGetStatusFromColor(t *testing.T) {
 				t.Errorf("getStatusFromColor(%q) = %q, want %q", tt.color, result, tt.expected)
 			}
 		})
+	}
+}
+
+// TestRun_BuildJobRejected verifies that the build-job command is properly rejected
+func TestRun_BuildJobRejected(t *testing.T) {
+	ctx := context.Background()
+	err := run(ctx, []string{"build-job", "test-job"})
+
+	if err == nil {
+		t.Fatal("Expected error for build-job command, got nil")
+	}
+
+	if !strings.Contains(err.Error(), "unknown sub-command: build-job") {
+		t.Errorf("Expected 'unknown sub-command: build-job' error, got: %v", err)
 	}
 }

@@ -70,18 +70,6 @@ func runMCPServer(ctx context.Context) error {
 		return getJobHandler(ctx, jenkinsClient, request)
 	})
 
-	// Add build-job tool
-	buildJobTool := mcp.NewTool("build_job",
-		mcp.WithDescription("Trigger a build for a Jenkins job"),
-		mcp.WithString("job_name",
-			mcp.Required(),
-			mcp.Description("Jenkins job name"),
-		),
-	)
-	s.AddTool(buildJobTool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		return buildJobHandler(ctx, jenkinsClient, request)
-	})
-
 	// Add get-build tool
 	getBuildTool := mcp.NewTool("get_build",
 		mcp.WithDescription("Get details of a specific build including status, duration, and timestamp"),
@@ -201,25 +189,6 @@ func getJobHandler(ctx context.Context, client *gojenkins.Jenkins, request mcp.C
 	}
 
 	return mcp.NewToolResultText(result), nil
-}
-
-func buildJobHandler(ctx context.Context, client *gojenkins.Jenkins, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	jobName, err := request.RequireString("job_name")
-	if err != nil {
-		return mcp.NewToolResultError(fmt.Sprintf("Missing or invalid 'job_name' argument: %v", err)), nil
-	}
-
-	job, err := client.GetJob(ctx, jobName)
-	if err != nil {
-		return mcp.NewToolResultError(fmt.Sprintf("Failed to get job: %v", err)), nil
-	}
-
-	_, err = job.InvokeSimple(ctx, nil)
-	if err != nil {
-		return mcp.NewToolResultError(fmt.Sprintf("Failed to trigger build: %v", err)), nil
-	}
-
-	return mcp.NewToolResultText(fmt.Sprintf("Successfully triggered build for job: %s", jobName)), nil
 }
 
 func getBuildHandler(ctx context.Context, client *gojenkins.Jenkins, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {

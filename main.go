@@ -33,7 +33,6 @@ func main() {
 		fmt.Fprintln(w, "  jenkins configure <url> [username] - Configure Jenkins URL and API token (reads token from stdin)")
 		fmt.Fprintln(w, "  jenkins list-jobs - List all Jenkins jobs")
 		fmt.Fprintln(w, "  jenkins get-job <job-name> - Get details of a specific job")
-		fmt.Fprintln(w, "  jenkins build-job <job-name> - Trigger a build for a job")
 		fmt.Fprintln(w, "  jenkins get-build <job-name> <build-number> - Get details of a specific build")
 		fmt.Fprintln(w, "  jenkins get-build-log <job-name> <build-number> - Get the console output of a build")
 		fmt.Fprintln(w, "  jenkins get-last-build <job-name> - Get details of the last build")
@@ -78,14 +77,6 @@ func run(ctx context.Context, args []string) error {
 		jobName := args[1]
 		return executeCommand(ctx, func(ctx context.Context) error {
 			return getJob(ctx, jobName)
-		})
-	case "build-job":
-		if len(args) < 2 {
-			return fmt.Errorf("usage: jenkins build-job <job-name>")
-		}
-		jobName := args[1]
-		return executeCommand(ctx, func(ctx context.Context) error {
-			return buildJob(ctx, jobName)
 		})
 	case "get-build":
 		if len(args) < 3 {
@@ -280,22 +271,6 @@ func getJob(ctx context.Context, jobName string) error {
 		}
 	}
 
-	return nil
-}
-
-// buildJob triggers a build for a job
-func buildJob(ctx context.Context, jobName string) error {
-	job, err := jenkins.GetJob(ctx, jobName)
-	if err != nil {
-		return fmt.Errorf("failed to get job: %w", err)
-	}
-
-	_, err = job.InvokeSimple(ctx, nil)
-	if err != nil {
-		return fmt.Errorf("failed to trigger build: %w", err)
-	}
-
-	fmt.Printf("Successfully triggered build for job: %s\n", jobName)
 	return nil
 }
 
