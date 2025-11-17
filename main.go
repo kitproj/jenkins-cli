@@ -205,13 +205,21 @@ func listJobs(ctx context.Context) error {
 		return fmt.Errorf("failed to list jobs: %w", err)
 	}
 
-	if len(jobs) == 0 {
+	// Filter out disabled jobs
+	enabledJobs := []gojenkins.InnerJob{}
+	for _, job := range jobs {
+		if !strings.HasPrefix(job.Color, "disabled") {
+			enabledJobs = append(enabledJobs, job)
+		}
+	}
+
+	if len(enabledJobs) == 0 {
 		fmt.Println("No jobs found")
 		return nil
 	}
 
-	fmt.Printf("Found %d job(s):\n\n", len(jobs))
-	for _, job := range jobs {
+	fmt.Printf("Found %d job(s):\n\n", len(enabledJobs))
+	for _, job := range enabledJobs {
 		status := getStatusFromColor(job.Color)
 		fmt.Printf("%-40s %-15s %s\n", job.Name, status, job.Url)
 	}
@@ -254,9 +262,16 @@ func getJob(ctx context.Context, jobName string) error {
 
 	// Print inner jobs if they exist (for folders and multi-branch pipelines)
 	innerJobs := job.GetInnerJobsMetadata()
-	if len(innerJobs) > 0 {
-		fmt.Printf("\nInner Jobs (%d):\n", len(innerJobs))
-		for _, innerJob := range innerJobs {
+	// Filter out disabled inner jobs
+	enabledInnerJobs := []gojenkins.InnerJob{}
+	for _, innerJob := range innerJobs {
+		if !strings.HasPrefix(innerJob.Color, "disabled") {
+			enabledInnerJobs = append(enabledInnerJobs, innerJob)
+		}
+	}
+	if len(enabledInnerJobs) > 0 {
+		fmt.Printf("\nInner Jobs (%d):\n", len(enabledInnerJobs))
+		for _, innerJob := range enabledInnerJobs {
 			status := getStatusFromColor(innerJob.Color)
 			fmt.Printf("  %-38s %-15s %s\n", innerJob.Name, status, innerJob.Url)
 		}
