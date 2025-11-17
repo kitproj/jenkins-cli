@@ -143,8 +143,8 @@ jenkins get-job my-application-build
 # URL:                 https://jenkins.example.com/job/my-application-build/
 # Status:              SUCCESS
 # Description:         Builds the main application
-# Last Build:          #42 - SUCCESS
-# Last Success:        #42
+# Last Build:          #42 - SUCCESS (https://jenkins.example.com/job/my-application-build/42/)
+# Last Success:        #42 (https://jenkins.example.com/job/my-application-build/42/)
 ```
 
 **Working with Inner Jobs (Folders and Multi-branch Pipelines):**

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/bndr/gojenkins"
 	"github.com/kitproj/jenkins-cli/internal/config"
@@ -112,12 +113,20 @@ func listJobsHandler(ctx context.Context, client *gojenkins.Jenkins, request mcp
 		return mcp.NewToolResultError(fmt.Sprintf("Failed to list jobs: %v", err)), nil
 	}
 
-	if len(jobs) == 0 {
+	// Filter out disabled jobs
+	enabledJobs := []gojenkins.InnerJob{}
+	for _, job := range jobs {
+		if !strings.HasPrefix(job.Color, "disabled") {
+			enabledJobs = append(enabledJobs, job)
+		}
+	}
+
+	if len(enabledJobs) == 0 {
 		return mcp.NewToolResultText("No jobs found"), nil
 	}
 
-	result := fmt.Sprintf("Found %d job(s):\n\n", len(jobs))
-	for _, job := range jobs {
+	result := fmt.Sprintf("Found %d job(s):\n\n", len(enabledJobs))
+	for _, job := range enabledJobs {
 		status := getStatusFromColor(job.Color)
 		result += fmt.Sprintf("%-40s %-15s %s\n", job.Name, status, job.Url)
 	}
@@ -153,24 +162,31 @@ func getJobHandler(ctx context.Context, client *gojenkins.Jenkins, request mcp.C
 
 	lastBuild, err := job.GetLastBuild(ctx)
 	if err == nil && lastBuild != nil {
-		result += fmt.Sprintf("\nLast Build: #%d - %s", lastBuild.GetBuildNumber(), lastBuild.GetResult())
+		result += fmt.Sprintf("\nLast Build: #%d - %s (%s)", lastBuild.GetBuildNumber(), lastBuild.GetResult(), lastBuild.GetUrl())
 	}
 
 	lastSuccess, err := job.GetLastSuccessfulBuild(ctx)
 	if err == nil && lastSuccess != nil {
-		result += fmt.Sprintf("\nLast Success: #%d", lastSuccess.GetBuildNumber())
+		result += fmt.Sprintf("\nLast Success: #%d (%s)", lastSuccess.GetBuildNumber(), lastSuccess.GetUrl())
 	}
 
 	lastFailed, err := job.GetLastFailedBuild(ctx)
 	if err == nil && lastFailed != nil {
-		result += fmt.Sprintf("\nLast Failed: #%d", lastFailed.GetBuildNumber())
+		result += fmt.Sprintf("\nLast Failed: #%d (%s)", lastFailed.GetBuildNumber(), lastFailed.GetUrl())
 	}
 
 	// Add inner jobs if they exist (for folders and multi-branch pipelines)
 	innerJobs := job.GetInnerJobsMetadata()
-	if len(innerJobs) > 0 {
-		result += fmt.Sprintf("\n\nInner Jobs (%d):", len(innerJobs))
-		for _, innerJob := range innerJobs {
+	// Filter out disabled inner jobs
+	enabledInnerJobs := []gojenkins.InnerJob{}
+	for _, innerJob := range innerJobs {
+		if !strings.HasPrefix(innerJob.Color, "disabled") {
+			enabledInnerJobs = append(enabledInnerJobs, innerJob)
+		}
+	}
+	if len(enabledInnerJobs) > 0 {
+		result += fmt.Sprintf("\n\nInner Jobs (%d):", len(enabledInnerJobs))
+		for _, innerJob := range enabledInnerJobs {
 			status := getStatusFromColor(innerJob.Color)
 			result += fmt.Sprintf("\n  %-38s %-15s %s", innerJob.Name, status, innerJob.Url)
 		}
