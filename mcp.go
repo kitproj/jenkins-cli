@@ -270,7 +270,7 @@ func getBuildHandler(ctx context.Context, client *gojenkins.Jenkins, request mcp
 
 	duration := build.GetDuration()
 	if duration > 0 {
-		result += fmt.Sprintf("\nDuration: %.0fs", duration/1000)
+		result += fmt.Sprintf("\nDuration: %s", formatDuration(duration))
 	}
 
 	return mcp.NewToolResultText(result), nil
@@ -344,7 +344,7 @@ func getLastBuildHandler(ctx context.Context, client *gojenkins.Jenkins, request
 
 	duration := build.GetDuration()
 	if duration > 0 {
-		result += fmt.Sprintf("\nDuration: %.0fs", duration/1000)
+		result += fmt.Sprintf("\nDuration: %s", formatDuration(duration))
 	}
 
 	return mcp.NewToolResultText(result), nil
