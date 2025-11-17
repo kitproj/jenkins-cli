@@ -16,19 +16,19 @@ func TestFormatDuration(t *testing.T) {
 		{5000, "5 seconds"},
 		{30000, "30 seconds"},
 		{59000, "59 seconds"},
-		
+
 		// Minutes
 		{60000, "1 minute"},
 		{120000, "2 minutes"},
 		{1800000, "30 minutes"},
 		{3599000, "59 minutes"},
-		
+
 		// Hours
 		{3600000, "1 hour"},
 		{7200000, "2 hours"},
 		{43200000, "12 hours"},
 		{86399000, "23 hours"},
-		
+
 		// Days
 		{86400000, "1 day"},
 		{172800000, "2 days"},
