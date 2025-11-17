@@ -162,17 +162,17 @@ func getJobHandler(ctx context.Context, client *gojenkins.Jenkins, request mcp.C
 
 	lastBuild, err := job.GetLastBuild(ctx)
 	if err == nil && lastBuild != nil {
-		result += fmt.Sprintf("\nLast Build: #%d - %s", lastBuild.GetBuildNumber(), lastBuild.GetResult())
+		result += fmt.Sprintf("\nLast Build: #%d - %s (%s)", lastBuild.GetBuildNumber(), lastBuild.GetResult(), lastBuild.GetUrl())
 	}
 
 	lastSuccess, err := job.GetLastSuccessfulBuild(ctx)
 	if err == nil && lastSuccess != nil {
-		result += fmt.Sprintf("\nLast Success: #%d", lastSuccess.GetBuildNumber())
+		result += fmt.Sprintf("\nLast Success: #%d (%s)", lastSuccess.GetBuildNumber(), lastSuccess.GetUrl())
 	}
 
 	lastFailed, err := job.GetLastFailedBuild(ctx)
 	if err == nil && lastFailed != nil {
-		result += fmt.Sprintf("\nLast Failed: #%d", lastFailed.GetBuildNumber())
+		result += fmt.Sprintf("\nLast Failed: #%d (%s)", lastFailed.GetBuildNumber(), lastFailed.GetUrl())
 	}
 
 	// Add inner jobs if they exist (for folders and multi-branch pipelines)

@@ -247,17 +247,17 @@ func getJob(ctx context.Context, jobName string) error {
 
 	lastBuild, err := job.GetLastBuild(ctx)
 	if err == nil && lastBuild != nil {
-		printField("Last Build", fmt.Sprintf("#%d - %s", lastBuild.GetBuildNumber(), lastBuild.GetResult()))
+		printField("Last Build", fmt.Sprintf("#%d - %s (%s)", lastBuild.GetBuildNumber(), lastBuild.GetResult(), lastBuild.GetUrl()))
 	}
 
 	lastSuccess, err := job.GetLastSuccessfulBuild(ctx)
 	if err == nil && lastSuccess != nil {
-		printField("Last Success", fmt.Sprintf("#%d", lastSuccess.GetBuildNumber()))
+		printField("Last Success", fmt.Sprintf("#%d (%s)", lastSuccess.GetBuildNumber(), lastSuccess.GetUrl()))
 	}
 
 	lastFailed, err := job.GetLastFailedBuild(ctx)
 	if err == nil && lastFailed != nil {
-		printField("Last Failed", fmt.Sprintf("#%d", lastFailed.GetBuildNumber()))
+		printField("Last Failed", fmt.Sprintf("#%d (%s)", lastFailed.GetBuildNumber(), lastFailed.GetUrl()))
 	}
 
 	// Print inner jobs if they exist (for folders and multi-branch pipelines)
