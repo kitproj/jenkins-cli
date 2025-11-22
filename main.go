@@ -2,10 +2,12 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"os"
 	"os/signal"
+	"strconv"
 	"strings"
 	"syscall"
 
@@ -280,19 +282,31 @@ func getJob(ctx context.Context, jobName string) error {
 	return nil
 }
 
+func getJenkinsBuild(ctx context.Context, jobName string, job *gojenkins.Job, id int64) (*gojenkins.Build, error) {
+	jobURL := "/job/" + jobName // hack for broken base URL
+	build := gojenkins.Build{Jenkins: job.Jenkins, Job: job, Raw: new(gojenkins.BuildResponse), Depth: 1, Base: jobURL + "/" + strconv.FormatInt(id, 10)}
+	status, err := build.Poll(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if status == 200 {
+		return &build, nil
+	}
+	return nil, errors.New(strconv.Itoa(status))
+}
+
 // getBuild gets details of a specific build
 func getBuild(ctx context.Context, jobName, buildNumber string) error {
 	job, err := jenkins.GetJob(ctx, jobName)
 	if err != nil {
 		return fmt.Errorf("failed to get job: %w", err)
 	}
-
 	buildNum, err := parseBuildNumber(buildNumber)
 	if err != nil {
 		return err
 	}
 
-	build, err := job.GetBuild(ctx, buildNum)
+	build, err := getJenkinsBuild(ctx, jobName, job, buildNum)
 	if err != nil {
 		return fmt.Errorf("failed to get build: %w", err)
 	}
@@ -313,7 +327,7 @@ func getBuildLog(ctx context.Context, jobName, buildNumber string) error {
 		return err
 	}
 
-	build, err := job.GetBuild(ctx, buildNum)
+	build, err := getJenkinsBuild(ctx, jobName, job, buildNum)
 	if err != nil {
 		return fmt.Errorf("failed to get build: %w", err)
 	}
