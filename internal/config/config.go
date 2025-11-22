@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/kitproj/jenkins-cli/internal/keyring"
+	"github.com/zalando/go-keyring"
 )
 
 const (
@@ -22,9 +22,17 @@ type config struct {
 
 // getConfigPath returns the path to the config file
 func getConfigPath() (string, error) {
-	configDirPath, err := os.UserConfigDir()
-	if err != nil {
-		return "", fmt.Errorf("failed to get config directory: %w", err)
+	var configDirPath string
+	var err error
+
+	// Check XDG_CONFIG_HOME first (Linux standard, also used in tests)
+	if xdgConfigHome := os.Getenv("XDG_CONFIG_HOME"); xdgConfigHome != "" {
+		configDirPath = xdgConfigHome
+	} else {
+		configDirPath, err = os.UserConfigDir()
+		if err != nil {
+			return "", fmt.Errorf("failed to get config directory: %w", err)
+		}
 	}
 
 	configPath := filepath.Join(configDirPath, "jenkins-cli", configFile)
