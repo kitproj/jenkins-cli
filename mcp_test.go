@@ -36,12 +36,29 @@ func TestRun_MCPServer(t *testing.T) {
 }
 
 func TestRun_MCPServerMissingConfig(t *testing.T) {
-	// Unset JENKINS_URL env var
+	// Use a temp directory for config to ensure no config file exists
+	tmpDir := t.TempDir()
+	oldXDGConfigHome := os.Getenv("XDG_CONFIG_HOME")
+	os.Setenv("XDG_CONFIG_HOME", tmpDir)
+	defer func() {
+		if oldXDGConfigHome != "" {
+			os.Setenv("XDG_CONFIG_HOME", oldXDGConfigHome)
+		} else {
+			os.Unsetenv("XDG_CONFIG_HOME")
+		}
+	}()
+
+	// Unset JENKINS_URL and JENKINS_TOKEN env vars
 	oldURL := os.Getenv("JENKINS_URL")
+	oldToken := os.Getenv("JENKINS_TOKEN")
 	os.Unsetenv("JENKINS_URL")
+	os.Unsetenv("JENKINS_TOKEN")
 	defer func() {
 		if oldURL != "" {
 			os.Setenv("JENKINS_URL", oldURL)
+		}
+		if oldToken != "" {
+			os.Setenv("JENKINS_TOKEN", oldToken)
 		}
 	}()
 
