@@ -27,31 +27,16 @@ Binaries are available for:
 
 Download the binary for your platform from the [release page](https://github.com/kitproj/jenkins-cli/releases).
 
-#### Linux
-
-**For Linux (amd64):**
+**For Linux and macOS:**
 ```bash
-sudo curl -fsL -o /usr/local/bin/jenkins https://github.com/kitproj/jenkins-cli/releases/download/v0.0.1/jenkins_v0.0.1_linux_amd64
-sudo chmod +x /usr/local/bin/jenkins
-```
+VERSION=v0.0.5
 
-**For Linux (arm64):**
-```bash
-sudo curl -fsL -o /usr/local/bin/jenkins https://github.com/kitproj/jenkins-cli/releases/download/v0.0.1/jenkins_v0.0.1_linux_arm64
-sudo chmod +x /usr/local/bin/jenkins
-```
+PLATFORM=$(uname -s | tr '[:upper:]' '[:lower:]')
 
-#### macOS
+ARCH=$(uname -m | sed 's/x86_64/amd64/' | sed 's/aarch64/arm64/')
 
-**For macOS (Apple Silicon/arm64):**
-```bash
-sudo curl -fsL -o /usr/local/bin/jenkins https://github.com/kitproj/jenkins-cli/releases/download/v0.0.1/jenkins_v0.0.1_darwin_arm64
-sudo chmod +x /usr/local/bin/jenkins
-```
+sudo curl -fsL -o /usr/local/bin/jenkins https://github.com/kitproj/jenkins-cli/releases/download/${VERSION}/jenkins_${VERSION}_${PLATFORM}_${ARCH}
 
-**For macOS (Intel/amd64):**
-```bash
-sudo curl -fsL -o /usr/local/bin/jenkins https://github.com/kitproj/jenkins-cli/releases/download/v0.0.1/jenkins_v0.0.1_darwin_amd64
 sudo chmod +x /usr/local/bin/jenkins
 ```
 
